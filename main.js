@@ -1,3 +1,5 @@
+import { setLevelBGM, levelBGM, startBGM, finishSFX, dashSFX, hitSFX, selectSFX, cooldownSFX, pauseSFX, gameoverBGM } from './audio.js';
+import { initInput, input, moveRight, moveLeft, moveUp, moveDown, dashButton, pauseButton, gameReset, shootButton } from './input.js';
 const canvas = document.getElementById('canvas1');
 const ctx = canvas.getContext('2d');
 canvas.width = 800;
@@ -8,12 +10,13 @@ collisionCanvas.width = canvas.width;
 collisionCanvas.height = canvas.height;
 
 document.addEventListener("keydown", keyDownHandler);
-document.addEventListener("keyup", keyUpHandler);
+// document.addEventListener("keyup", keyUpHandler);
 document.addEventListener('mousedown', mouseDownHandler);
 document.addEventListener('mouseup', mouseUpHandler);
 document.addEventListener('auxclick', mouseAuxHandler);
-canvas.addEventListener('mousemove', mouseMoveHandler);
 document.addEventListener('click', mouseClickHandler);
+
+initInput(canvas);
 
 //level variables
 let currentLevel = 1;
@@ -36,11 +39,6 @@ let waveOverlayStart = 0
 let mouthChosen = false;
 let movementChosen = false;
 let initializeGame = false;
-let hitSFX = new Audio('assets/sfx/hit.wav');
-let selectSFX = new Audio('assets/sfx/select.wav');
-let cooldownSFX = new Audio('assets/sfx/cooldown.wav');
-let pauseSFX = new Audio('assets/sfx/pause.wav');
-let gameoverBGM = new Audio(`assets/bgm/Crab's Diner.wav`)
 
 //ui variables
 let currentWave = 1;
@@ -140,18 +138,6 @@ let biteSpawnTimer = null;
 let nextBiteTime = 0;
 let biteCooldown = 600;
 
-//controls
-let moveRight = ['ArrowRight', 'KeyD'];
-let moveLeft = ['ArrowLeft', 'KeyA'];
-let moveUp = ['ArrowUp', 'KeyW'];
-let moveDown = ['ArrowDown', 'KeyS'];
-let shootButton = 0; //main mouse button
-let dashButton = [1, 'Space']; //middle mouse button
-let pauseButton = 'KeyP';
-let gameReset = 'Enter';
-let mouseX = 0;
-let mouseY = 0;
-
 //control switches
 let rightPressed = false;
 let leftPressed = false;
@@ -239,14 +225,14 @@ const moveOptions = [
 
 function keyDownHandler(event) {
     if (moveRight.includes(event.code)) {
-        rightPressed = true;
+        input.rightPressed = true;
     } else if (moveLeft.includes(event.code)) {
-        leftPressed = true;
+        input.leftPressed = true;
     }
     if (moveDown.includes(event.code)) {
-        downPressed = true;
+        input.downPressed = true;
     } else if (moveUp.includes(event.code)) {
-        upPressed = true;
+        input.upPressed = true;
     }
     if (dashButton.includes(event.code)) {
         triggerDash();
@@ -281,18 +267,6 @@ function keyDownHandler(event) {
     }
 }
 
-function keyUpHandler(event) {
-    if (moveRight.includes(event.code)) {
-        rightPressed = false;
-    } else if (moveLeft.includes(event.code)) {
-        leftPressed = false;
-    }
-    if (moveDown.includes(event.code)) {
-        downPressed = false;
-    } else if (moveUp.includes(event.code)) {
-        upPressed = false;
-    }
-}
 
 function mouseDownHandler(event) {
     event.preventDefault();
@@ -314,15 +288,10 @@ function mouseDownHandler(event) {
 }
 
 function mouseUpHandler(event) {
-    if (event.button === 0) {
+    if (event.button === shootButton) {
         clearInterval(bulletSpawnTimer)
         clearInterval(laserSpawnTimer)
     }
-}
-
-function mouseMoveHandler(event) {
-    mouseX = event.offsetX;
-    mouseY = event.offsetY;
 }
 
 function drawPause() {
@@ -374,22 +343,22 @@ class SelectionScreen{
         this.selectedOption = null;
     }
     update(){
-        if (mouseX >= this.options[0].x
-            && mouseX <= this.options[0].x + this.size
-            && mouseY >= this.y
-            && mouseY <= this.y + this.size
+        if (input.mouseX >= this.options[0].x
+            && input.mouseX <= this.options[0].x + this.size
+            && input.mouseY >= this.y
+            && input.mouseY <= this.y + this.size
         ) {
             this.hoveredOption = 0
-        } else if (mouseX >= this.options[1].x
-            && mouseX <= this.options[1].x + this.size
-            && mouseY >= this.y
-            && mouseY <= this.y + this.size
+        } else if (input.mouseX >= this.options[1].x
+            && input.mouseX <= this.options[1].x + this.size
+            && input.mouseY >= this.y
+            && input.mouseY <= this.y + this.size
         ) {
             this.hoveredOption = 1
-        } else if (mouseX >= this.options[2].x
-            && mouseX <= this.options[2].x + this.size
-            && mouseY >= this.y
-            && mouseY <= this.y + this.size
+        } else if (input.mouseX >= this.options[2].x
+            && input.mouseX <= this.options[2].x + this.size
+            && input.mouseY >= this.y
+            && input.mouseY <= this.y + this.size
         ) {
             this.hoveredOption = 2
         } else {
@@ -505,13 +474,13 @@ class Player {
             gameState = 'gameOver';
         }
         //movement logic
-        if (rightPressed && !leftPressed && !laserShot) {
+        if (input.rightPressed && !input.leftPressed && !laserShot) {
             if (!finsChosen){
                 this.angle += turnSpeed;
             } else if (finsChosen){
                 this.angle += finTurnSpeed;
             }
-        } else if (leftPressed && !rightPressed && !laserShot) {
+        } else if (input.leftPressed && !input.rightPressed && !laserShot) {
             if (!finsChosen){
                 this.angle -= turnSpeed;
             } else if (finsChosen){
@@ -526,7 +495,7 @@ class Player {
         this.directionY = Math.sin(this.angle);
 
         
-        if (downPressed && jetChosen && !laserShot) {
+        if (input.downPressed && jetChosen && !laserShot) {
             if ((this.x - this.moveX) > 0 
             && (this.x - this.moveX) < canvas.width - this.width 
             && (this.y - this.moveY) > 0 
@@ -538,7 +507,7 @@ class Player {
             }
         } 
         
-        if (downPressed && !laserShot) {
+        if (input.downPressed && !laserShot) {
             if ((this.x - this.moveX) > 0 
             && (this.x - this.moveX) < canvas.width - this.width 
             && (this.y - this.moveY) > 0 
@@ -547,7 +516,7 @@ class Player {
                 this.x -= this.moveX;
                 this.centerX -= this.moveX;
                 this.centerY -= this.moveY;
-        }} else if (upPressed && !laserShot) {
+        }} else if (input.upPressed && !laserShot) {
             if ((this.x + this.moveX) > 0 
             && (this.x + this.moveX) < canvas.width - this.width 
             && (this.y + this.moveY) > 0 
@@ -1141,7 +1110,7 @@ function pressureStream() {
         }
         laserStopTime = performance.now() + nextLaserTime;
         nextShootTime = performance.now() + laserCooldown;
-        for (enemy of enemies) {
+        for (let enemy of enemies) {
             enemy.isDamaged = false;
         }
         
@@ -1175,9 +1144,8 @@ function biteAttack() {
 
 function triggerDash() {
     if (laserShot) return
-    let dashSFX = new Audio('assets/sfx/dodge.wav')
     if (canDash && jetChosen) {
-        if (upPressed) {
+        if (input.upPressed) {
             if ((player.x + player.moveX * dashDistance) > 0 
                 && (player.x + player.moveX * dashDistance) < canvas.width - player.width 
                 && (player.y + player.moveY * dashDistance) > 0 
@@ -1188,7 +1156,7 @@ function triggerDash() {
                 player.centerX += (player.moveX * dashModifier) * dashDistance;
                 player.centerY += (player.moveY * dashModifier) * dashDistance;
             }
-        } else if (downPressed) {
+        } else if (input.downPressed) {
             if ((player.x - player.moveX * dashDistance) > 0 
                 && (player.x - player.moveX * dashDistance) < canvas.width - player.width 
                 && (player.y - player.moveY * dashDistance) > 0 
@@ -1215,7 +1183,7 @@ function triggerDash() {
         player.nextMoveTime = performance.now() + dashCooldown;
     }
     if (canFlipTurn && flagellaChosen) {
-        if (upPressed || downPressed) {
+        if (input.upPressed || input.downPressed) {
             if ((player.x - player.moveX * flipDistance) > 0 
                 && (player.x - player.moveX * flipDistance) < canvas.width - player.width 
                 && (player.y - player.moveY * flipDistance) > 0 
@@ -1248,7 +1216,7 @@ function triggerDash() {
         player.nextMoveTime = performance.now() + dashCooldown;
     }
     if (canRoll && finsChosen) {
-        if (upPressed) {
+        if (input.upPressed) {
             let pivotX = player.centerX + (Math.sin(player.angle) * rollPivotDistance);
             let pivotY = player.centerY - (Math.cos(player.angle) * rollPivotDistance);
             let dx = player.centerX - pivotX;
@@ -1273,7 +1241,7 @@ function triggerDash() {
                 player.y = playerY - player.height / 2;
                 
             }
-        } else if (downPressed) {
+        } else if (input.downPressed) {
             let pivotX = player.centerX + (Math.sin(player.angle) * rollPivotDistance);
             let pivotY = player.centerY - (Math.cos(player.angle) * rollPivotDistance);
             let dx = player.centerX - pivotX;
@@ -1398,8 +1366,8 @@ function enemySpawner(){
 
 function checkPlayerBullets(){
     //check if player's bullets hit an enemy and subtract damage from health
-    for (bullet of bullets) {
-        for (enemy of enemies) {
+    for (let bullet of bullets) {
+        for (let enemy of enemies) {
             let dx = bullet.centerX - enemy.centerX;
             let dy = bullet.centerY - enemy.centerY;
             let distance = Math.floor(Math.sqrt(dx * dx + dy * dy));
@@ -1418,7 +1386,7 @@ function checkPlayerBullets(){
 }
 
 function checkEnemyBullets(){
-    for (bullet of enemyBullets) {
+    for (let bullet of enemyBullets) {
         let dx = bullet.centerX - player.centerX;
         let dy = bullet.centerY - player.centerY;
         let distance = Math.floor(Math.sqrt(dx * dx + dy * dy));
@@ -1431,7 +1399,7 @@ function checkEnemyBullets(){
 }
 
 function checkCollision(){
-    for (enemy of enemies) {
+    for (let enemy of enemies) {
         let dx = enemy.centerX - player.centerX;
         let dy = enemy.centerY - player.centerY;
         let distance = Math.floor(Math.sqrt(dx * dx + dy * dy));
@@ -1564,7 +1532,7 @@ function waveCompleteTransition(){
 
 function goToNextLevel(){
     currentLevel += 1;
-    levelBGM = new Audio(`assets/bgm/level${currentLevelBGM}.wav`)
+    setLevelBGM(currentLevelBGM);
     currentWave = 1;
     enemiesDefeated = 0;
     levelModifier = 1 + ((currentLevel - 1) * 0.25);
@@ -1634,7 +1602,6 @@ function updateAndDraw(){
         }
         if (performance.now() >= waveCompleteEndTime) {
             let waveDuration = performance.now() - waveOverlayStart;
-            let finishSFX = new Audio('assets/sfx/countdown finish.wav')
             finishSFX.play();
             player.nextMoveTime = 0;
             nextInvuln = 0;
@@ -1765,7 +1732,4 @@ function initialize(){
     player.nextMoveTime = 0;
 }
 
-let startBGM = new Audio('assets/bgm/Whale Waltz.wav')
-let levelBGM = new Audio(`assets/bgm/level1.wav`)
-
-animate(0)
+animate(0);
