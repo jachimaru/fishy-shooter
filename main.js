@@ -1460,6 +1460,7 @@ function resetGame(){
     wavesThisLevel = 3;
     enemiesDefeated = 0;
     enemiesThisWave = 5;
+    enemiesNextWave = Math.floor(enemiesThisWave * 1.2)
     playerHealth = 10 * (currentLevel > 1 ? healthModifier : 1);
     spawnStarted = false;
     timeToNextFrame = 0;
