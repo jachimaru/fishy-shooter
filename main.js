@@ -629,7 +629,7 @@ let bullets = [];
 const enemyPresets = {
     normal: {health: 2, moveSpeed: 2, image: 'normal.png', moveInterval: 2000, range: 200, bulletInterval: 400, bulletAmount: 1, bulletWaves: 3, shootInterval: 4000, bulletTravel: bulletDistance, damage: 1}, //normal shooting pattern and movement.
     barracuda: {health: 1, moveSpeed: 6, image: 'barracuda.png', moveInterval: 2000, range: 600, bulletInterval: 0, bulletAmount: 0, bulletWaves: 0, shootInterval: 0, bulletTravel: 0, damage: 5}, //fast, charges, no shooting.
-    puffer: {health: 5, moveSpeed: 1, image: 'puffer.png', moveInterval: 3000, range: 100, bulletInterval: 800, bulletAmount: 8, bulletWaves: 4, shootInterval: 5000, bulletTravel: 400, damage: 3}, //doesn't move, turns to player and shoots when within distance
+    puffer: {health: 4, moveSpeed: 1, image: 'puffer.png', moveInterval: 3000, range: 100, bulletInterval: 800, bulletAmount: 8, bulletWaves: 4, shootInterval: 4000, bulletTravel: 300, damage: 1}, //doesn't move, turns to player and shoots when within distance
 }
 
 const bulletPresets = {
@@ -1370,24 +1370,29 @@ function mouseClickHandler(event) {
 function enemySpawner(){
     if (enemiesSpawned >= enemiesThisWave) return
     if (performance.now() >= spawnTimer && enemies.length < enemyMax) {
-    let randEnemy = Math.floor(Math.random() * 3);
-    randomX = Math.floor(Math.random() * (canvas.width - 50));
-    randomY = Math.floor(Math.random() * (canvas.height - 50));
-    let enemyChoice = '';
-    if (randEnemy === 0) {
-        enemyChoice = 'normal';
-    } else if (randEnemy === 1 && ((enemies.length > 3 || enemiesSpawned > 4) && currentLevel >= 2)) {
-        enemyChoice = 'barracuda';
-    } else if (randEnemy === 2 && (enemies.length > 1 || enemiesSpawned > 2)) {
-        enemyChoice = 'puffer';
-    } else {
-        enemyChoice = 'normal';
-    }
-    let enemy = new Enemy(enemyChoice, randomX, randomY);
-    enemiesSpawned += 1;
-    enemies.push(enemy);
-    enemy.draw(ctx);
-    spawnStarted = true;
+        let randEnemy = Math.floor(Math.random() * 3);
+        randomX = Math.floor(Math.random() * (canvas.width - 50));
+        randomY = Math.floor(Math.random() * (canvas.height - 50));
+        let enemyChoice = '';
+        if (randEnemy === 0) {
+            enemyChoice = 'normal';
+        } else if (randEnemy === 1 && ((enemies.length > 3 || enemiesSpawned > 4) && currentLevel >= 3)) {
+            enemyChoice = 'barracuda';
+        } else if (randEnemy === 2 && ((enemies.length > 1 || enemiesSpawned > 2) && currentLevel >= 2)) {
+            enemyChoice = 'puffer';
+        } else {
+            enemyChoice = 'normal';
+        }
+        let dx = (randomX + 25) - player.centerX;
+        let dy = (randomY + 25) - player.centerY;
+        let distance = Math.floor(Math.sqrt(dx * dx + dy * dy));
+        if (distance >= 220) {
+            let enemy = new Enemy(enemyChoice, randomX, randomY);
+            enemiesSpawned += 1;
+            enemies.push(enemy);
+            enemy.draw(ctx);
+            spawnStarted = true;
+        }
     }
 }
 
