@@ -1,6 +1,7 @@
 import { setLevelBGM, levelBGM, startBGM, finishSFX, dashSFX, hitSFX, selectSFX, cooldownSFX, pauseSFX, gameoverBGM } from './audio.js';
 import { initInput, input, moveRight, moveLeft, moveUp, moveDown, dashButton, pauseButton, gameReset, shootButton } from './input.js';
 import { state, spawningState } from './state.js';
+import { initUI, setAbilityIcon, setShootIcon, setCountdown, abilityIcon, shootIcon, dashImage, flipTurnImage, rollImage, bulletImage, laserImage, biteImage, moveAbilityX, moveAbilityY, shootAbilityX, shootAbilityY, mouthSelect, moveSelect, countdownNumber, SelectionScreen, AbilityIcon, drawPause, drawStartScreen, drawUI } from './ui.js';
 const canvas = document.getElementById('canvas1');
 const ctx = canvas.getContext('2d');
 canvas.width = 800;
@@ -11,54 +12,25 @@ collisionCanvas.width = canvas.width;
 collisionCanvas.height = canvas.height;
 
 document.addEventListener("keydown", keyDownHandler);
-// document.addEventListener("keyup", keyUpHandler);
 document.addEventListener('mousedown', mouseDownHandler);
 document.addEventListener('mouseup', mouseUpHandler);
 document.addEventListener('auxclick', mouseAuxHandler);
 document.addEventListener('click', mouseClickHandler);
 
 initInput(canvas);
+initUI(canvas, ctx);
 
 //level variables
-// let currentLevel = 1;
 let currentLevelBGM = Math.floor(Math.random() * 5) + 1;
-// let levelModifier = 1 + ((currentLevel - 1) * 0.25);
-// let waveModifier = 1.25
 
 //helper variables
 let timeToNextFrame = 0;
 let lastTime = 0;
 let randomX = Math.floor(Math.random() * (canvas.width - 50));
 let randomY = Math.floor(Math.random() * (canvas.height - 50));
-// let gameState = 'starting' // starting, playing, waveComplete, gameOver
-// let spawnStarted = false;
 let waveOverlayTimer = 3000;
-let countdownNumber = 3;
-// let levelComplete = false;
 let waveCompleteEndTime = 0;
 let waveOverlayStart = 0
-// let mouthChosen = false;
-// let movementChosen = false;
-// let initializeGame = false;
-
-//ui variables
-// let currentWave = 1;
-// let wavesThisLevel = Math.floor(3 + (currentLevel > 1 ? waveModifier : 0));
-// let enemiesDefeated = 0;
-// let enemiesThisWave = 5 + ((currentLevel - 1) * 0.25);
-// let enemiesNextWave = Math.floor(enemiesThisWave * 1.2)
-let abilityIcon; //for ability icon class and initialize function
-let shootIcon;
-let dashImage = 'dash.png';
-let flipTurnImage = 'flipturn.png';
-let rollImage = 'roll.png';
-let bulletImage = 'bullet.png'
-let laserImage = 'laser.png'
-let biteImage = 'bite.png'
-let moveAbilityX = 75;
-let moveAbilityY = 725;
-let shootAbilityX = 25;
-let shootAbilityY = 725;
 
 //player variables
 let startingX = canvas.width / 2;
@@ -139,90 +111,9 @@ let biteSpawnTimer = null;
 let nextBiteTime = 0;
 let biteCooldown = 600;
 
-//control switches
-// let rightPressed = false;
-// let leftPressed = false;
-// let upPressed = false;
-// let downPressed = false;
-// let shootPressed = false;
-// let dashPressed = false;
-let isPaused = false;
-
-//Pause handling
-let pauseStartTime = 0;
-
 //enemy handling
-// let spawnTimer = 3000;
-// let enemyMax = 3;
-// let enemiesSpawned = 0;
 let isShooting = false;
 
-//selection variables
-const attackOptions = [
-    {
-        name: 'Filter Feeder',
-        image: bulletImage,
-        speed: 2,
-        damage: 2,
-        distance: 2,
-        x: 100,
-        abilityName: 'Acid Bubbles',
-        abilityDescription: 'Can shoot while moving.'
-    },
-    {
-        name: 'Proboscus',
-        image: laserImage,
-        speed: 1,
-        damage: 1,
-        distance: 3,
-        x: canvas.width/2 - 50,
-        abilityName: 'Pressure Stream',
-        abilityDescription: 'Cannot mve while shooting.'
-    },
-    {
-        name: 'Mandibles',
-        image: biteImage,
-        speed: 3,
-        damage: 3,
-        distance: 1,
-        x: canvas.width - 200,
-        abilityName: 'Bite',
-        abilityDescription: 'Restores health on kill.'
-    }
-]
-
-const moveOptions = [
-    {
-        name: 'Tentacles',
-        image: flipTurnImage,
-        speed: 2,
-        maneuverability: 2,
-        distance: 2,
-        x: 100,
-        abilityName: 'Flip Turn',
-        abilityDescription: 'Turn 180 degrees.'
-    },
-    {
-        name: 'Jet Propulsion',
-        image: dashImage,
-        speed: 3,
-        maneuverability: 1,
-        distance: 3,
-        x: canvas.width/2 -50,
-        abilityName: 'Jet Dash',
-        abilityDescription: 'Dash forward at high speed.'
-    },
-    {
-        name: 'Fins',
-        image: rollImage,
-        speed: 1,
-        maneuverability: 3,
-        distance: 1,
-        x: canvas.width - 200,
-        abilityName: 'Side Roll',
-        abilityDescription: 'Rotate to the side.'
-    }
-]
 
 function keyDownHandler(event) {
     if (moveRight.includes(event.code)) {
@@ -238,15 +129,15 @@ function keyDownHandler(event) {
     if (dashButton.includes(event.code)) {
         triggerDash();
     }
-    if (event.code === pauseButton && !isPaused) {
-        isPaused = true;
+    if (event.code === pauseButton && !input.isPaused) {
+        input.isPaused = true;
         pauseSFX.play();
         levelBGM.volume -= levelBGM.volume / 2;
-        pauseStartTime = performance.now();
-    } else if (event.code === pauseButton && isPaused) {
-        isPaused = false;
+        input.pauseStartTime = performance.now();
+    } else if (event.code === pauseButton && input.isPaused) {
+        input.isPaused = false;
         levelBGM.volume += levelBGM.volume;
-        let pauseDuration = performance.now() - pauseStartTime;
+        let pauseDuration = performance.now() - input.pauseStartTime;
         player.nextMoveTime += pauseDuration;
         nextInvuln += pauseDuration;
         enemies.forEach(enemy => {
@@ -295,18 +186,6 @@ function mouseUpHandler(event) {
     }
 }
 
-function drawPause() {
-    if (state.gameState === 'playing')
-        {ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.font = '48px Bagel Fat One';
-        ctx.fillStyle = 'white';
-        ctx.textAlign = 'center';
-        ctx.fillText('Game Paused', canvas.width / 2, canvas.height / 2);
-        ctx.font = '24px Bagel Fat One';
-        ctx.fillText(`press 'P' to unpause.`, canvas.width / 2, canvas.height / 2 + 48);
-    }
-}
-
 class targetReticle{
     constructor(){
         this.width = 20;
@@ -331,123 +210,6 @@ class targetReticle{
     }
     draw(ctx){
         ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
-    }
-}
-
-class SelectionScreen{
-    constructor(options, title){
-        this.options = options;
-        this.hoveredOption = null;
-        this.y = canvas.height/2;
-        this.size = 100;
-        this.title = title;
-        this.selectedOption = null;
-    }
-    update(){
-        if (input.mouseX >= this.options[0].x
-            && input.mouseX <= this.options[0].x + this.size
-            && input.mouseY >= this.y
-            && input.mouseY <= this.y + this.size
-        ) {
-            this.hoveredOption = 0
-        } else if (input.mouseX >= this.options[1].x
-            && input.mouseX <= this.options[1].x + this.size
-            && input.mouseY >= this.y
-            && input.mouseY <= this.y + this.size
-        ) {
-            this.hoveredOption = 1
-        } else if (input.mouseX >= this.options[2].x
-            && input.mouseX <= this.options[2].x + this.size
-            && input.mouseY >= this.y
-            && input.mouseY <= this.y + this.size
-        ) {
-            this.hoveredOption = 2
-        } else {
-            this.hoveredOption = null;
-        }
-    }
-    draw(){
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        this.drawBackground();
-        this.drawOptions();
-        this.drawTooltip();
-    }
-    drawBackground(){
-        //just a fill background and text.
-        ctx.fillStyle = '#260d83'
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.font = '48px Bagel Fat One';
-        ctx.fillStyle = 'white';
-        ctx.textAlign = 'center';
-        ctx.fillText(this.title, canvas.width/2, 300);
-    }
-    drawOptions(){
-        this.options.forEach(option => {
-            const image = new Image();
-            image.src = option.image;
-            ctx.drawImage(image, option.x, this.y);
-            ctx.font = '24px Bagel Fat One';
-            ctx.fillStyle = 'white';
-            ctx.textAlign = 'center';
-            ctx.fillText(option.name, option.x + this.size/2, this.y - 10);
-        })
-    }
-    drawTooltip(){
-        //draw tooltip directly under the option clicked. X value should be this.options[n].x. Y should be this.y + 120. (20 pixels below the image)
-        if (this.hoveredOption === null || this.hoveredOption === undefined || !this.options[this.hoveredOption]) {
-        return; 
-        }
-        const option = this.options[this.hoveredOption];
-        ctx.fillStyle = '#ffffff65'
-        ctx.fillRect(option.x - 75, this.y + 120, this.size * 2.5, this.size * 1.5)
-        ctx.font = '18px Bagel Fat One';
-        ctx.fillStyle = 'white';
-        ctx.textAlign = 'center';
-        ctx.fillText(option.abilityName, option.x + this.size / 2, this.y + 140);
-        ctx.fillText(`Speed: ${option.speed}`, option.x + this.size / 2, this.y + 164);
-        if (!state.mouthChosen) {
-            ctx.fillText(`Damage: ${option.damage}`, option.x + this.size / 2, this.y + 188);
-        } else if (!state.movementChosen){
-            ctx.fillText(`Turning: ${option.maneuverability}`, option.x + this.size / 2, this.y + 188);
-        }
-        ctx.fillText(`Distance: ${option.distance}`, option.x + this.size / 2, this.y + 212);
-        ctx.fillText(`Notes`, option.x + this.size / 2, this.y + 236);
-        ctx.fillText(option.abilityDescription, option.x + this.size / 2, this.y + 260);
-    }
-}
-
-let mouthSelect = new SelectionScreen(attackOptions, 'Choose an Attack Ability.')
-let moveSelect = new SelectionScreen(moveOptions, 'Choose a Movement Ability.')
-
-class AbilityIcon {
-    constructor(x, y, image, progressFunction){
-        this.x = x;
-        this.y = y;
-        this.image = new Image();
-        this.image.src = image;
-        this.width = 50;
-        this.height = 50;
-        this.getProgress = progressFunction;
-        this.centerX = this.x + 25;
-        this.centerY = this.y + 25;
-        this.startAngle = -Math.PI / 2;
-        this.radius = this.width / 2;
-    }
-    update(){
-
-    }
-    draw(){
-        let progress = Math.max(0, Math.min(1, this.getProgress()));
-        let endAngle = -Math.PI / 2 + (2 * Math.PI * progress)
-        ctx.drawImage(this.image, this.x, this.y, this.width, this.height)
-        ctx.globalAlpha = progress;
-        ctx.fillStyle = 'black';
-        ctx.beginPath()
-        ctx.moveTo(this.centerX, this.centerY)
-        ctx.arc(this.centerX, this.centerY, this.radius, this.startAngle, endAngle)
-        ctx.globalAlpha = 0.6;
-        ctx.fill();
-        ctx.globalAlpha = 1;
     }
 }
 
@@ -1478,47 +1240,6 @@ function resetGame(){
     state.gameState = 'starting'
 }
 
-function drawUI(){
-    if (!isPaused) {
-        shootIcon.draw();
-        abilityIcon.draw();
-        ctx.font = '24px Bagel Fat One';
-        ctx.fillStyle = 'white';
-        ctx.textAlign = 'center';
-        ctx.fillText(`Health: ${playerHealth}`, 70, 25);
-        ctx.fillText(`Wave: ${state.currentWave} / ${Math.floor(state.wavesThisLevel)}`, canvas.width - 75, 25)
-        ctx.fillText(`Enemies Defeated: ${state.enemiesDefeated} / ${state.enemiesThisWave}`, canvas.width / 2, 25);
-        ctx.fillText(`Level: ${state.currentLevel}`, canvas.width - 60, canvas.height - 25);
-    } else if (isPaused) {
-        drawPause();
-    } 
-    if (state.gameState === 'gameOver') {
-        ctx.clearRect(0, 0, canvas.width, canvas.height)
-        ctx.font = '48px Bagel Fat One';
-        ctx.fillStyle = 'white';
-        ctx.textAlign = 'center';
-        ctx.fillText(`Game Over!`, canvas.width / 2, canvas.height / 2);
-        ctx.font = '24px Bagel Fat One';
-        ctx.fillText(`press Enter to reset`, canvas.width / 2, canvas.height / 2 + 48)
-    }
-    if (state.gameState === 'waveComplete') {
-        ctx.clearRect(0, 0, canvas.width, canvas.height)
-        ctx.font = '48px Bagel Fat One';
-        ctx.fillStyle = 'white';
-        ctx.textAlign = 'center';
-        ctx.fillText(countdownNumber, canvas.width / 2,  canvas.height / 2)
-    }
-    if (state.gameState === 'levelComplete') {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.font = '48px Bagel Fat One';
-        ctx.fillStyle = 'white';
-        ctx.textAlign = 'center';
-        ctx.fillText('Level Complete!', canvas.width / 2, canvas.height / 2);
-        ctx.font = '24px Bagel Fat One';
-        ctx.fillText(`press Enter to proceed to next level.`, canvas.width / 2, canvas.height / 2 + 48);
-    }
-}
-
 function waveCompleteTransition(){
     laserShot = false;
     state.enemiesDefeated = 0;
@@ -1565,7 +1286,7 @@ let previousNumber = 0;
 
 function updateAndDraw(){
     if (state.gameState === 'playing') {
-        if (levelBGM.paused && !isPaused) levelBGM.play();
+        if (levelBGM.paused && !input.isPaused) levelBGM.play();
         [...bullets, ...enemyBullets, ...enemies].forEach(object => object.update());
         [...bullets, ...enemyBullets, ...enemies].forEach(object => object.draw(ctx));
         checkPlayerBullets();
@@ -1595,7 +1316,7 @@ function updateAndDraw(){
     if (state.gameState === 'waveComplete') {
         levelBGM.pause();
         levelBGM.currentTime = 0;
-        countdownNumber = Math.ceil((waveCompleteEndTime - performance.now()) / 1000)
+        setCountdown(Math.ceil((waveCompleteEndTime - performance.now()) / 1000))
         if (previousNumber !== countdownNumber) {
             let countSFX = new Audio('assets/sfx/countdown.wav')
             countSFX.play();
@@ -1626,24 +1347,10 @@ function updateAndDraw(){
     }
 }
 
-function drawStartScreen() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.font = '64px Bagel Fat One';
-    ctx.fillStyle = 'white';
-    ctx.textAlign = 'center';
-    ctx.fillText('FISHY SHOOTER', canvas.width / 2, 64);
-    ctx.font = '48px Bagel Fat One';
-    ctx.fillText(`Press Enter to start game.`, canvas.width / 2, canvas.height / 2 + 48);
-    player.draw(ctx);
-    player.update();
-    [...bullets].forEach(object => object.update());
-    [...bullets].forEach(object => object.draw(ctx));
-}
-
 function animate(timestamp){
     if (state.gameState === 'starting') {
         startBGM.play();
-        drawStartScreen();
+        drawStartScreen(player, bullets);
     } else {
         if (!state.mouthChosen) {
             mouthSelect.draw();
@@ -1667,8 +1374,8 @@ function animate(timestamp){
             state.gameState = 'playing';
             state.initializeGame = false;
         }
-        if (isPaused) {
-            drawUI();
+        if (input.isPaused) {
+            drawUI(playerHealth);
             requestAnimationFrame(animate);
             return;
         }
@@ -1683,7 +1390,7 @@ function animate(timestamp){
             }
         }
         updateAndDraw();
-        drawUI();
+        drawUI(playerHealth);
     }
     
     requestAnimationFrame(animate);
@@ -1694,32 +1401,32 @@ function initialize(){
     if (finsChosen){
         moveSpeed = finMoveSpeed;
         turnSpeed = finTurnSpeed;
-        abilityIcon = new AbilityIcon(moveAbilityX, moveAbilityY, rollImage, () => {
+        setAbilityIcon(new AbilityIcon(moveAbilityX, moveAbilityY, rollImage, () => {
             return (player.nextMoveTime - performance.now()) / rollCooldown;
-        });
+        }));
     } else if (jetChosen){
         moveSpeed = jetMoveSpeed;
         turnSpeed = jetTurnSpeed;
-        abilityIcon = new AbilityIcon(moveAbilityX, moveAbilityY, dashImage, () => {
+        setAbilityIcon(new AbilityIcon(moveAbilityX, moveAbilityY, dashImage, () => {
             return (player.nextMoveTime - performance.now()) / dashCooldown;
-        });
+        }));
     } else if (flagellaChosen){
-        abilityIcon = new AbilityIcon(moveAbilityX, moveAbilityY, flipTurnImage, () => {
+        setAbilityIcon(new AbilityIcon(moveAbilityX, moveAbilityY, flipTurnImage, () => {
             return (player.nextMoveTime - performance.now()) / flipCooldown;
-        });
+        }));
     }
     if (filterMouth){
-        shootIcon = new AbilityIcon(shootAbilityX, shootAbilityY, bulletImage, () => {
+        setShootIcon(new AbilityIcon(shootAbilityX, shootAbilityY, bulletImage, () => {
             return (nextShootTime - performance.now()) / bulletCooldown;
-        });
+        }));
     } else if (proboscusMouth){
-        shootIcon = new AbilityIcon(shootAbilityX, shootAbilityY, laserImage, () => {
+        setShootIcon(new AbilityIcon(shootAbilityX, shootAbilityY, laserImage, () => {
             return (nextShootTime - performance.now()) / laserCooldown;
-        });
+        }));
     } else if (mandibleMouth){
-        shootIcon = new AbilityIcon(shootAbilityX, shootAbilityY, biteImage, () => {
+        setShootIcon(new AbilityIcon(shootAbilityX, shootAbilityY, biteImage, () => {
             return (nextBiteTime - performance.now()) / biteCooldown;
-        });
+        }));
     }
     player.x = startingX;
     player.y = startingY;

@@ -14,6 +14,8 @@ export let input = {
     downPressed: false,
     shootPressed: false,
     dashPressed: false,
+    isPaused: false,
+    pauseStartTime: 0,
     mouseX: 0,
     mouseY: 0,
   }
