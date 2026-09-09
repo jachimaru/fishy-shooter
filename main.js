@@ -201,7 +201,7 @@ class targetReticle{
         this.y = (player.centerY - (Math.cos(player.angle) * this.distance)) - (this.height / 2)
         this.angle = player.angle;
         this.image = new Image();
-        this.image.src = 'target.png'
+        this.image.src = 'assets/graphic/target.png'
     }
     update(){
         this.x = (player.centerX + (Math.sin(player.angle) * this.distance)) - (this.width / 2)
@@ -223,7 +223,7 @@ class Player {
         this.directionX = Math.cos(this.angle);
         this.directionY = Math.sin(this.angle);
         this.image = new Image();
-        this.image.src = 'fish.png'
+        this.image.src = 'assets/graphics/fish.png'
         this.centerX = (this.x + this.width) - 25
         this.centerY = (this.y + this.height) - 25
         this.moveX = Math.cos(this.angle) * moveSpeed;
@@ -351,7 +351,7 @@ class Player {
 
         isInvuln = true;
         nextInvuln = performance.now() + invulnTimer;
-    }
+    }x
 }
 
 let player = new Player();
@@ -359,14 +359,14 @@ let bullets = [];
 
 
 const enemyPresets = {
-    normal: {health: 2, moveSpeed: 2, image: 'normal.png', moveInterval: 2000, range: 200, bulletInterval: 400, bulletAmount: 1, bulletWaves: 3, shootInterval: 4000, bulletTravel: bulletDistance, damage: 1}, //normal shooting pattern and movement.
-    barracuda: {health: 1, moveSpeed: 6, image: 'barracuda.png', moveInterval: 2000, range: 600, bulletInterval: 0, bulletAmount: 0, bulletWaves: 0, shootInterval: 0, bulletTravel: 0, damage: 5}, //fast, charges, no shooting.
-    puffer: {health: 4, moveSpeed: 1, image: 'puffer.png', moveInterval: 3000, range: 100, bulletInterval: 800, bulletAmount: 8, bulletWaves: 4, shootInterval: 4000, bulletTravel: 300, damage: 1}, //doesn't move, turns to player and shoots when within distance
+    normal: {health: 2, moveSpeed: 2, image: 'assets/graphic/normal.png', moveInterval: 2000, range: 200, bulletInterval: 400, bulletAmount: 1, bulletWaves: 3, shootInterval: 4000, bulletTravel: bulletDistance, damage: 1}, //normal shooting pattern and movement.
+    barracuda: {health: 1, moveSpeed: 6, image: 'assets/graphic/barracuda.png', moveInterval: 2000, range: 600, bulletInterval: 0, bulletAmount: 0, bulletWaves: 0, shootInterval: 0, bulletTravel: 0, damage: 5}, //fast, charges, no shooting.
+    puffer: {health: 4, moveSpeed: 1, image: 'assets/graphic/puffer.png', moveInterval: 3000, range: 100, bulletInterval: 800, bulletAmount: 8, bulletWaves: 4, shootInterval: 4000, bulletTravel: 300, damage: 1}, //doesn't move, turns to player and shoots when within distance
 }
 
 const bulletPresets = {
-    normal: {damage: 1, moveSpeed: 4, image: 'bubble.png'},
-    puffer: {damage: 2, moveSpeed: 1.5, image: 'needle.png'},
+    normal: {damage: 1, moveSpeed: 4, image: 'assets/graphic/bubble.png'},
+    puffer: {damage: 2, moveSpeed: 1.5, image: 'assets/graphic/needle.png'},
 }
 let enemies = [];
 let enemyBullets = [];
@@ -382,7 +382,7 @@ class Bullet {
         this.moveSpeed = (3 * (state.currentLevel > 1 ? state.levelModifier : 1)) * bulletSpeed;
         this.radius = bulletRadius;
         this.image = new Image()
-        this.image.src = 'bubble.png'
+        this.image.src = 'assets/graphic/bubble.png'
         this.angle = player.angle;
         this.moveX = player.moveX;
         this.moveY = player.moveY;
@@ -424,7 +424,7 @@ class Laser {
         this.y = player.centerY - this.height/2
         this.moveSpeed = player.moveSpeed * laserSpeed;
         this.image = new Image()
-        this.image.src = 'beam.png'
+        this.image.src = 'assets/graphic/beam.png'
         this.angle = player.angle;
         this.moveX = player.moveX;
         this.moveY = player.moveY;
@@ -494,7 +494,7 @@ class Bite {
         this.moveSpeed = (3 * (state.currentLevel > 1 ? state.levelModifier : 1)) * biteSpeed;
         this.radius = biteRadius;
         this.image = new Image()
-        this.image.src = 'bite.png'
+        this.image.src = 'assets/graphic/bite.png'
         this.angle = player.angle;
         this.moveX = player.moveX;
         this.moveY = player.moveY;
