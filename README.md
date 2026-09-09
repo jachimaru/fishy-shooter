@@ -26,3 +26,8 @@ Upgrade screen between waves.
 Unique graphics per ability combination.
 
 Bosses.
+
+## Planned Fixes / Known Issues
+Some movement skills can push the player past the border. (Add a check to stop this)
+
+Make the canvas responsive for different screen ratios.
