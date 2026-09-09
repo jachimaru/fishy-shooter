@@ -1,5 +1,6 @@
 import { setLevelBGM, levelBGM, startBGM, finishSFX, dashSFX, hitSFX, selectSFX, cooldownSFX, pauseSFX, gameoverBGM } from './audio.js';
 import { initInput, input, moveRight, moveLeft, moveUp, moveDown, dashButton, pauseButton, gameReset, shootButton } from './input.js';
+import { state, spawningState } from './state.js';
 const canvas = document.getElementById('canvas1');
 const ctx = canvas.getContext('2d');
 canvas.width = 800;
@@ -19,33 +20,33 @@ document.addEventListener('click', mouseClickHandler);
 initInput(canvas);
 
 //level variables
-let currentLevel = 1;
+// let currentLevel = 1;
 let currentLevelBGM = Math.floor(Math.random() * 5) + 1;
-let levelModifier = 1 + ((currentLevel - 1) * 0.25);
-let waveModifier = 1.25
+// let levelModifier = 1 + ((currentLevel - 1) * 0.25);
+// let waveModifier = 1.25
 
 //helper variables
 let timeToNextFrame = 0;
 let lastTime = 0;
 let randomX = Math.floor(Math.random() * (canvas.width - 50));
 let randomY = Math.floor(Math.random() * (canvas.height - 50));
-let gameState = 'starting' // starting, playing, waveComplete, gameOver
-let spawnStarted = false;
+// let gameState = 'starting' // starting, playing, waveComplete, gameOver
+// let spawnStarted = false;
 let waveOverlayTimer = 3000;
 let countdownNumber = 3;
-let levelComplete = false;
+// let levelComplete = false;
 let waveCompleteEndTime = 0;
 let waveOverlayStart = 0
-let mouthChosen = false;
-let movementChosen = false;
-let initializeGame = false;
+// let mouthChosen = false;
+// let movementChosen = false;
+// let initializeGame = false;
 
 //ui variables
-let currentWave = 1;
-let wavesThisLevel = Math.floor(3 + (currentLevel > 1 ? waveModifier : 0));
-let enemiesDefeated = 0;
-let enemiesThisWave = 5 + ((currentLevel - 1) * 0.25);
-let enemiesNextWave = Math.floor(enemiesThisWave * 1.2)
+// let currentWave = 1;
+// let wavesThisLevel = Math.floor(3 + (currentLevel > 1 ? waveModifier : 0));
+// let enemiesDefeated = 0;
+// let enemiesThisWave = 5 + ((currentLevel - 1) * 0.25);
+// let enemiesNextWave = Math.floor(enemiesThisWave * 1.2)
 let abilityIcon; //for ability icon class and initialize function
 let shootIcon;
 let dashImage = 'dash.png';
@@ -62,9 +63,9 @@ let shootAbilityY = 725;
 //player variables
 let startingX = canvas.width / 2;
 let startingY = canvas.height / 2;
-let moveSpeed = 3 * (currentLevel > 1 ? levelModifier : 1);
+let moveSpeed = 3 * (state.currentLevel > 1 ? state.levelModifier : 1);
 let killCount = 0;
-let playerHealth = Math.floor(10 * (currentLevel > 1 ? healthModifier : 1));
+let playerHealth = Math.floor(10 * (state.currentLevel > 1 ? healthModifier : 1));
 let healthModifier = 1.5;
 let knockbackForce = 25;
 let invulnTimer = 1500;
@@ -139,21 +140,21 @@ let nextBiteTime = 0;
 let biteCooldown = 600;
 
 //control switches
-let rightPressed = false;
-let leftPressed = false;
-let upPressed = false;
-let downPressed = false;
-let shootPressed = false;
-let dashPressed = false;
+// let rightPressed = false;
+// let leftPressed = false;
+// let upPressed = false;
+// let downPressed = false;
+// let shootPressed = false;
+// let dashPressed = false;
 let isPaused = false;
 
 //Pause handling
 let pauseStartTime = 0;
 
 //enemy handling
-let spawnTimer = 3000;
-let enemyMax = 3;
-let enemiesSpawned = 0;
+// let spawnTimer = 3000;
+// let enemyMax = 3;
+// let enemiesSpawned = 0;
 let isShooting = false;
 
 //selection variables
@@ -254,13 +255,13 @@ function keyDownHandler(event) {
             enemy.nextBulletTime += pauseDuration;
         })
     }
-    if (event.code === gameReset && gameState === 'gameOver'){
+    if (event.code === gameReset && state.gameState === 'gameOver'){
         resetGame();
-    } else if (event.code === gameReset && gameState === 'starting'){
+    } else if (event.code === gameReset && state.gameState === 'starting'){
         filterMouth = false;
-        gameState = 'playing';
+        state.gameState = 'playing';
     }
-    if (event.code === gameReset && levelComplete) {
+    if (event.code === gameReset && state.levelComplete) {
         levelBGM.pause();
         levelBGM.currentTime = 0;
         goToNextLevel();
@@ -270,7 +271,7 @@ function keyDownHandler(event) {
 
 function mouseDownHandler(event) {
     event.preventDefault();
-    if (movementChosen || gameState === 'starting') {
+    if (state.movementChosen || state.gameState === 'starting') {
         if (event.button === 0) {
             if (filterMouth) {
                 acidBubbles();
@@ -295,7 +296,7 @@ function mouseUpHandler(event) {
 }
 
 function drawPause() {
-    if (gameState === 'playing')
+    if (state.gameState === 'playing')
         {ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.font = '48px Bagel Fat One';
         ctx.fillStyle = 'white';
@@ -404,9 +405,9 @@ class SelectionScreen{
         ctx.textAlign = 'center';
         ctx.fillText(option.abilityName, option.x + this.size / 2, this.y + 140);
         ctx.fillText(`Speed: ${option.speed}`, option.x + this.size / 2, this.y + 164);
-        if (!mouthChosen) {
+        if (!state.mouthChosen) {
             ctx.fillText(`Damage: ${option.damage}`, option.x + this.size / 2, this.y + 188);
-        } else if (!movementChosen){
+        } else if (!state.movementChosen){
             ctx.fillText(`Turning: ${option.maneuverability}`, option.x + this.size / 2, this.y + 188);
         }
         ctx.fillText(`Distance: ${option.distance}`, option.x + this.size / 2, this.y + 212);
@@ -471,7 +472,7 @@ class Player {
         if (performance.now() >= nextInvuln) isInvuln = false;
 
         if (playerHealth <= 0) {
-            gameState = 'gameOver';
+            state.gameState = 'gameOver';
         }
         //movement logic
         if (input.rightPressed && !input.leftPressed && !laserShot) {
@@ -616,7 +617,7 @@ class Bullet {
         this.damage = bulletDamage;
         this.x = player.centerX - this.width/2
         this.y = player.centerY - this.height/2
-        this.moveSpeed = (3 * (currentLevel > 1 ? levelModifier : 1)) * bulletSpeed;
+        this.moveSpeed = (3 * (state.currentLevel > 1 ? state.levelModifier : 1)) * bulletSpeed;
         this.radius = bulletRadius;
         this.image = new Image()
         this.image.src = 'bubble.png'
@@ -728,7 +729,7 @@ class Bite {
         this.damage = biteDamage;
         this.x = player.centerX - this.width/2
         this.y = player.centerY - this.height/2
-        this.moveSpeed = (3 * (currentLevel > 1 ? levelModifier : 1)) * biteSpeed;
+        this.moveSpeed = (3 * (state.currentLevel > 1 ? state.levelModifier : 1)) * biteSpeed;
         this.radius = biteRadius;
         this.image = new Image()
         this.image.src = 'bite.png'
@@ -777,8 +778,8 @@ class EnemyBullet {
         this.height = 20;
         this.x = x
         this.y = y
-        this.damage = Math.floor(preset.damage * (currentLevel > 1 ? levelModifier : 1));
-        this.moveSpeed = preset.moveSpeed * (currentLevel > 1 ? levelModifier : 1);
+        this.damage = Math.floor(preset.damage * (state.currentLevel > 1 ? state.levelModifier : 1));
+        this.moveSpeed = preset.moveSpeed * (state.currentLevel > 1 ? state.levelModifier : 1);
         this.radius = bulletRadius;
         this.image = new Image()
         this.image.src = preset.image;
@@ -820,19 +821,19 @@ class Enemy {
         const preset = enemyPresets[type] || enemyPresets.normal
 
         this.type = type;
-        this.health = preset.health * (currentLevel > 1 ? levelModifier : 1);
-        this.moveSpeed = preset.moveSpeed * (currentLevel > 1 ? levelModifier : 1);
+        this.health = preset.health * (state.currentLevel > 1 ? state.levelModifier : 1);
+        this.moveSpeed = preset.moveSpeed * (state.currentLevel > 1 ? state.levelModifier : 1);
         this.moveInterval = preset.moveInterval; 
         this.range = preset.range;
         this.bulletInterval = preset.bulletInterval;
         this.bulletAmount = preset.bulletAmount;
-        this.bulletWaves = preset.bulletWaves * (currentLevel > 1 ? levelModifier : 1);
+        this.bulletWaves = preset.bulletWaves * (state.currentLevel > 1 ? state.levelModifier : 1);
         this.bulletTravel = preset.bulletTravel;
         this.shootInterval = preset.shootInterval;
         this.nextBulletTime = 0;
         this.nextShootTime = 0;
         this.wavesFired = 0;
-        this.damage = preset.damage * (currentLevel > 1 ? levelModifier : 1);
+        this.damage = preset.damage * (state.currentLevel > 1 ? state.levelModifier : 1);
 
         this.state = this.type === 'puffer' ? 'shooting' : 'patrolling'; //patrolling, attacking, shooting
 
@@ -877,7 +878,7 @@ class Enemy {
 
         //health check
         if (this.health <= 0) {
-            enemiesDefeated += 1;
+            state.enemiesDefeated += 1;
             this.isAlive = false;
         }
 
@@ -1054,7 +1055,7 @@ class Enemy {
         if (this.isDamaged === true && proboscusMouth) return;
         this.health -= Math.ceil(damage);
         hitSFX.play();
-        if (type === 'bite' && this.health <= 0) playerHealth = Math.min(playerHealth + 1, Math.floor(10 * (currentLevel > 1 ? healthModifier : 1)))
+        if (type === 'bite' && this.health <= 0) playerHealth = Math.min(playerHealth + 1, Math.floor(10 * (state.currentLevel > 1 ? healthModifier : 1)))
         this.hitTimer = this.flashDuration;
         let dx = x - this.centerX;
         let dy = y - this.centerY;
@@ -1307,46 +1308,46 @@ function mouseClickHandler(event) {
     if (event.button === 0 && mouthSelect.hoveredOption === 0) {
         selectSFX.play()
         filterMouth = true;
-        mouthChosen = true;
+        state.mouthChosen = true;
     } else if (event.button === 0 && mouthSelect.hoveredOption === 1) {
         selectSFX.play()
         proboscusMouth = true;
-        mouthChosen = true;
+        state.mouthChosen = true;
     } else if (event.button === 0 && mouthSelect.hoveredOption === 2) {
         selectSFX.play()
         mandibleMouth = true;
-        mouthChosen = true;
+        state.mouthChosen = true;
     } 
     if (event.button === 0 && moveSelect.hoveredOption === 0) {
         selectSFX.play()
         flagellaChosen = true;
-        movementChosen = true;
-        initializeGame = true;
+        state.movementChosen = true;
+        state.initializeGame = true;
     } else if (event.button === 0 && moveSelect.hoveredOption === 1) {
         selectSFX.play()
         jetChosen = true;
-        movementChosen = true;
-        initializeGame = true;
+        state.movementChosen = true;
+        state.initializeGame = true;
     } else if (event.button === 0 && moveSelect.hoveredOption === 2) {
         selectSFX.play()
         finsChosen = true;
-        movementChosen = true;
-        initializeGame = true;
+        state.movementChosen = true;
+        state.initializeGame = true;
     }
 }
 
 function enemySpawner(){
-    if (enemiesSpawned >= enemiesThisWave) return
-    if (performance.now() >= spawnTimer && enemies.length < enemyMax) {
+    if (spawningState.enemiesSpawned >= state.enemiesThisWave) return
+    if (performance.now() >= spawningState.spawnTimer && enemies.length < spawningState.enemyMax) {
         let randEnemy = Math.floor(Math.random() * 3);
         randomX = Math.floor(Math.random() * (canvas.width - 50));
         randomY = Math.floor(Math.random() * (canvas.height - 50));
         let enemyChoice = '';
         if (randEnemy === 0) {
             enemyChoice = 'normal';
-        } else if (randEnemy === 1 && ((enemies.length > 3 || enemiesSpawned > 4) && currentLevel >= 3)) {
+        } else if (randEnemy === 1 && ((enemies.length > 3 || spawningState.enemiesSpawned > 4) && state.currentLevel >= 3)) {
             enemyChoice = 'barracuda';
-        } else if (randEnemy === 2 && ((enemies.length > 1 || enemiesSpawned > 2) && currentLevel >= 2)) {
+        } else if (randEnemy === 2 && ((enemies.length > 1 || spawningState.enemiesSpawned > 2) && state.currentLevel >= 2)) {
             enemyChoice = 'puffer';
         } else {
             enemyChoice = 'normal';
@@ -1356,10 +1357,10 @@ function enemySpawner(){
         let distance = Math.floor(Math.sqrt(dx * dx + dy * dy));
         if (distance >= 220) {
             let enemy = new Enemy(enemyChoice, randomX, randomY);
-            enemiesSpawned += 1;
+            spawningState.enemiesSpawned += 1;
             enemies.push(enemy);
             enemy.draw(ctx);
-            spawnStarted = true;
+            spawningState.spawnStarted = true;
         }
     }
 }
@@ -1413,29 +1414,29 @@ function checkCollision(){
 function resetGame(){
     gameoverBGM.pause();
     gameoverBGM.currentTime = 0;
-    mouthChosen = false;
-    movementChosen = false;
-    initializeGame = false;
+    state.mouthChosen = false;
+    state.movementChosen = false;
+    state.initializeGame = false;
     jetChosen = false;
     flagellaChosen = false;
     finsChosen = false;
     filterMouth = true;
     proboscusMouth = false;
     laserShot = false;
-    levelComplete = false;
+    state.levelComplete = false;
     mandibleMouth = false;
     mouthSelect.hoveredOption = null;
     mouthSelect.selectedOption = null;
     moveSelect.hoveredOption = null;
     moveSelect.selectedOption = null;
-    currentLevel = 1
-    currentWave = 1;
-    wavesThisLevel = 3;
-    enemiesDefeated = 0;
-    enemiesThisWave = 5;
-    enemiesNextWave = Math.floor(enemiesThisWave * 1.2)
-    playerHealth = 10 * (currentLevel > 1 ? healthModifier : 1);
-    spawnStarted = false;
+    state.currentLevel = 1
+    state.currentWave = 1;
+    state.wavesThisLevel = 3;
+    state.enemiesDefeated = 0;
+    state.enemiesThisWave = 5;
+    state.enemiesNextWave = Math.floor(state.enemiesThisWave * 1.2)
+    playerHealth = 10 * (state.currentLevel > 1 ? healthModifier : 1);
+    spawningState.spawnStarted = false;
     timeToNextFrame = 0;
     lastTime = 0;
     moveSpeed = 3;
@@ -1470,11 +1471,11 @@ function resetGame(){
     nextShootTime = 0;
     bulletCooldown = 400;
     isShooting = false;
-    spawnTimer = 3000;
-    enemyMax = 3;
-    enemiesSpawned = 0;
+    spawningState.spawnTimer = 3000;
+    spawningState.enemyMax = 3;
+    spawningState.enemiesSpawned = 0;
     player = new Player();
-    gameState = 'starting'
+    state.gameState = 'starting'
 }
 
 function drawUI(){
@@ -1485,13 +1486,13 @@ function drawUI(){
         ctx.fillStyle = 'white';
         ctx.textAlign = 'center';
         ctx.fillText(`Health: ${playerHealth}`, 70, 25);
-        ctx.fillText(`Wave: ${currentWave} / ${Math.floor(wavesThisLevel)}`, canvas.width - 75, 25)
-        ctx.fillText(`Enemies Defeated: ${enemiesDefeated} / ${enemiesThisWave}`, canvas.width / 2, 25);
-        ctx.fillText(`Level: ${currentLevel}`, canvas.width - 60, canvas.height - 25);
+        ctx.fillText(`Wave: ${state.currentWave} / ${Math.floor(state.wavesThisLevel)}`, canvas.width - 75, 25)
+        ctx.fillText(`Enemies Defeated: ${state.enemiesDefeated} / ${state.enemiesThisWave}`, canvas.width / 2, 25);
+        ctx.fillText(`Level: ${state.currentLevel}`, canvas.width - 60, canvas.height - 25);
     } else if (isPaused) {
         drawPause();
     } 
-    if (gameState === 'gameOver') {
+    if (state.gameState === 'gameOver') {
         ctx.clearRect(0, 0, canvas.width, canvas.height)
         ctx.font = '48px Bagel Fat One';
         ctx.fillStyle = 'white';
@@ -1500,14 +1501,14 @@ function drawUI(){
         ctx.font = '24px Bagel Fat One';
         ctx.fillText(`press Enter to reset`, canvas.width / 2, canvas.height / 2 + 48)
     }
-    if (gameState === 'waveComplete') {
+    if (state.gameState === 'waveComplete') {
         ctx.clearRect(0, 0, canvas.width, canvas.height)
         ctx.font = '48px Bagel Fat One';
         ctx.fillStyle = 'white';
         ctx.textAlign = 'center';
         ctx.fillText(countdownNumber, canvas.width / 2,  canvas.height / 2)
     }
-    if (gameState === 'levelComplete') {
+    if (state.gameState === 'levelComplete') {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.font = '48px Bagel Fat One';
         ctx.fillStyle = 'white';
@@ -1520,27 +1521,27 @@ function drawUI(){
 
 function waveCompleteTransition(){
     laserShot = false;
-    enemiesDefeated = 0;
+    state.enemiesDefeated = 0;
     enemyBullets = [];
-    currentWave += 1;
-    enemiesThisWave = enemiesNextWave;
+    state.currentWave += 1;
+    state.enemiesThisWave = state.enemiesNextWave;
     player = new Player()
     waveCompleteEndTime = performance.now() + waveOverlayTimer;
     waveOverlayStart = performance.now();
-    gameState = 'waveComplete';
+    state.gameState = 'waveComplete';
 }
 
 function goToNextLevel(){
-    currentLevel += 1;
+    state.currentLevel += 1;
     setLevelBGM(currentLevelBGM);
-    currentWave = 1;
-    enemiesDefeated = 0;
-    levelModifier = 1 + ((currentLevel - 1) * 0.25);
-    wavesThisLevel = Math.floor(3 + (currentLevel > 1 ? waveModifier : 0))
-    playerHealth = Math.floor(10 * (currentLevel > 1 ? healthModifier : 1));
-    enemiesNextWave = Math.floor(enemiesThisWave * 1.2)
-    levelComplete = false;
-    spawnStarted = false;
+    state.currentWave = 1;
+    state.enemiesDefeated = 0;
+    state.levelModifier = 1 + ((state.currentLevel - 1) * 0.25);
+    state.wavesThisLevel = Math.floor(3 + (state.currentLevel > 1 ? state.waveModifier : 0))
+    playerHealth = Math.floor(10 * (state.currentLevel > 1 ? healthModifier : 1));
+    state.enemiesNextWave = Math.floor(state.enemiesThisWave * 1.2)
+    state.levelComplete = false;
+    spawningState.spawnStarted = false;
     timeToNextFrame = 0;
     lastTime = 0;
     killCount = 0;
@@ -1553,17 +1554,17 @@ function goToNextLevel(){
     canRoll = false;
     nextShootTime = 0;
     isShooting = false;
-    spawnTimer = 3000;
-    enemyMax = 3;
-    enemiesSpawned = 0;
+    spawningState.spawnTimer = 3000;
+    spawningState.enemyMax = 3;
+    spawningState.enemiesSpawned = 0;
     player = new Player();
-    gameState = 'playing'
+    state.gameState = 'playing'
 }
 
 let previousNumber = 0;
 
 function updateAndDraw(){
-    if (gameState === 'playing') {
+    if (state.gameState === 'playing') {
         if (levelBGM.paused && !isPaused) levelBGM.play();
         [...bullets, ...enemyBullets, ...enemies].forEach(object => object.update());
         [...bullets, ...enemyBullets, ...enemies].forEach(object => object.draw(ctx));
@@ -1582,16 +1583,16 @@ function updateAndDraw(){
         bullets = bullets.filter(object => !object.markedForDeletion);
         enemyBullets = enemyBullets.filter(object => !object.markedForDeletion);
         enemies = enemies.filter(object => object.isAlive);
-        if (enemies.length === 0 && spawnStarted && enemiesSpawned === enemiesThisWave) {
-            if (currentWave === wavesThisLevel) {
-                levelComplete = true;
-                gameState = 'levelComplete'
+        if (enemies.length === 0 && spawningState.spawnStarted && spawningState.enemiesSpawned === state.enemiesThisWave) {
+            if (state.currentWave === state.wavesThisLevel) {
+                state.levelComplete = true;
+                state.gameState = 'levelComplete'
             } else {
                 waveCompleteTransition();
             }
         }
     }
-    if (gameState === 'waveComplete') {
+    if (state.gameState === 'waveComplete') {
         levelBGM.pause();
         levelBGM.currentTime = 0;
         countdownNumber = Math.ceil((waveCompleteEndTime - performance.now()) / 1000)
@@ -1610,15 +1611,15 @@ function updateAndDraw(){
                 enemy.nextShootTime += waveDuration;
                 enemy.nextBulletTime += waveDuration;
             })
-        spawnTimer = 3000;
-        enemiesSpawned = 0;
-        spawnStarted = false;
+        spawningState.spawnTimer = 3000;
+        spawningState.enemiesSpawned = 0;
+        spawningState.spawnStarted = false;
         enemies = [];
         bullets = [];
-        gameState = 'playing'
+        state.gameState = 'playing'
         }
     }
-    if (gameState === 'gameOver') {
+    if (state.gameState === 'gameOver') {
         levelBGM.pause();
         levelBGM.currentTime = 0;
         gameoverBGM.play();
@@ -1640,31 +1641,31 @@ function drawStartScreen() {
 }
 
 function animate(timestamp){
-    if (gameState === 'starting') {
+    if (state.gameState === 'starting') {
         startBGM.play();
         drawStartScreen();
     } else {
-        if (!mouthChosen) {
+        if (!state.mouthChosen) {
             mouthSelect.draw();
             mouthSelect.update();
             requestAnimationFrame(animate);
             return
         }
-        if (!movementChosen) {
+        if (!state.movementChosen) {
             mouthSelect.hoveredOption = null;
             moveSelect.draw();
             moveSelect.update();
             requestAnimationFrame(animate);
             return;
         }
-        if (initializeGame) {
+        if (state.initializeGame) {
             moveSelect.hoveredOption = null;
             startBGM.pause();
             startBGM.currentTime = 0;
             initialize();
             levelBGM.play();
-            gameState = 'playing';
-            initializeGame = false;
+            state.gameState = 'playing';
+            state.initializeGame = false;
         }
         if (isPaused) {
             drawUI();
@@ -1672,11 +1673,11 @@ function animate(timestamp){
             return;
         }
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        if (gameState === 'playing') {
+        if (state.gameState === 'playing') {
             let deltatime = timestamp - lastTime;
             lastTime = timestamp;
             timeToNextFrame += deltatime;
-            if (timeToNextFrame > spawnTimer){
+            if (timeToNextFrame > spawningState.spawnTimer){
                 enemySpawner();
                 timeToNextFrame = 0;
             }
