@@ -147,14 +147,14 @@ let bullets = [];
 
 
 const enemyPresets = {
-    normal: {health: 2, moveSpeed: 2, image: 'assets/graphic/normal.png', moveInterval: 2000, range: 200, bulletInterval: 400, bulletAmount: 1, bulletWaves: 3, shootInterval: 4000, bulletTravel: bulletDistance, damage: 1}, //normal shooting pattern and movement.
-    barracuda: {health: 1, moveSpeed: 6, image: 'assets/graphic/barracuda.png', moveInterval: 2000, range: 600, bulletInterval: 0, bulletAmount: 0, bulletWaves: 0, shootInterval: 0, bulletTravel: 0, damage: 5}, //fast, charges, no shooting.
-    puffer: {health: 4, moveSpeed: 1, image: 'assets/graphic/puffer.png', moveInterval: 3000, range: 100, bulletInterval: 800, bulletAmount: 8, bulletWaves: 4, shootInterval: 4000, bulletTravel: 300, damage: 1}, //doesn't move, turns to player and shoots when within distance
+    normal: {health: 2, moveSpeed: 2, image: 'assets/graphics/normal.png', moveInterval: 2000, range: 200, bulletInterval: 400, bulletAmount: 1, bulletWaves: 3, shootInterval: 4000, bulletTravel: bulletDistance, damage: 1}, //normal shooting pattern and movement.
+    barracuda: {health: 1, moveSpeed: 6, image: 'assets/graphics/barracuda.png', moveInterval: 2000, range: 600, bulletInterval: 0, bulletAmount: 0, bulletWaves: 0, shootInterval: 0, bulletTravel: 0, damage: 5}, //fast, charges, no shooting.
+    puffer: {health: 4, moveSpeed: 1, image: 'assets/graphics/puffer.png', moveInterval: 3000, range: 100, bulletInterval: 800, bulletAmount: 8, bulletWaves: 4, shootInterval: 4000, bulletTravel: 300, damage: 1}, //doesn't move, turns to player and shoots when within distance
 }
 
 const bulletPresets = {
-    normal: {damage: 1, moveSpeed: 4, image: 'assets/graphic/bubble.png'},
-    puffer: {damage: 2, moveSpeed: 1.5, image: 'assets/graphic/needle.png'},
+    normal: {damage: 1, moveSpeed: 4, image: 'assets/graphics/bubble.png'},
+    puffer: {damage: 2, moveSpeed: 1.5, image: 'assets/graphics/needle.png'},
 }
 let enemies = [];
 let enemyBullets = [];
@@ -170,7 +170,7 @@ class Bullet {
         this.moveSpeed = (3 * (state.currentLevel > 1 ? state.levelModifier : 1)) * bulletSpeed;
         this.radius = bulletRadius;
         this.image = new Image()
-        this.image.src = 'assets/graphic/bubble.png'
+        this.image.src = 'assets/graphics/bubble.png'
         this.angle = player.angle;
         this.moveX = player.moveX;
         this.moveY = player.moveY;
@@ -212,7 +212,7 @@ class Laser {
         this.y = player.centerY - this.height/2
         this.moveSpeed = player.moveSpeed * laserSpeed;
         this.image = new Image()
-        this.image.src = 'assets/graphic/beam.png'
+        this.image.src = 'assets/graphics/beam.png'
         this.angle = player.angle;
         this.moveX = player.moveX;
         this.moveY = player.moveY;
@@ -282,7 +282,7 @@ class Bite {
         this.moveSpeed = (3 * (state.currentLevel > 1 ? state.levelModifier : 1)) * biteSpeed;
         this.radius = biteRadius;
         this.image = new Image()
-        this.image.src = 'assets/graphic/bite.png'
+        this.image.src = 'assets/graphics/bite.png'
         this.angle = player.angle;
         this.moveX = player.moveX;
         this.moveY = player.moveY;
@@ -870,6 +870,7 @@ function resetGame(){
     spawningState.enemyMax = 3;
     spawningState.enemiesSpawned = 0;
     player = new Player();
+    setPlayer(player)
     state.gameState = 'starting'
 }
 
@@ -880,6 +881,7 @@ function waveCompleteTransition(){
     state.currentWave += 1;
     state.enemiesThisWave = state.enemiesNextWave;
     player = new Player()
+    setPlayer(player)
     waveCompleteEndTime = performance.now() + waveOverlayTimer;
     waveOverlayStart = performance.now();
     state.gameState = 'waveComplete';
@@ -912,19 +914,13 @@ function goToNextLevel(){
     spawningState.enemyMax = 3;
     spawningState.enemiesSpawned = 0;
     player = new Player();
+    setPlayer(player)
     state.gameState = 'playing'
 }
 
 let previousNumber = 0;
-let distance;
-if (filterMouth) {
-      distance = bulletDistance;
-  } else if (proboscusMouth) {
-      distance = laserDistance / 2;
-  } else if (mandibleMouth) {
-      distance = biteDistance;
-  }
-let target = new targetReticle(distance)
+
+
 
 function updateAndDraw(){
     if (state.gameState === 'playing') {
@@ -940,8 +936,17 @@ function updateAndDraw(){
             player.draw();
         }
         player.update();
-        target.update()
-        target.draw()
+        let distance;
+        if (filterMouth) {
+            distance = bulletDistance;
+        } else if (proboscusMouth) {
+            distance = laserDistance / 2;
+        } else if (mandibleMouth) {
+            distance = biteDistance;
+        }
+        let target = new targetReticle(distance);
+        target.update();
+        target.draw();
         bullets = bullets.filter(object => !object.markedForDeletion);
         enemyBullets = enemyBullets.filter(object => !object.markedForDeletion);
         enemies = enemies.filter(object => object.isAlive);

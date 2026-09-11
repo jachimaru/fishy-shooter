@@ -72,7 +72,7 @@ export class targetReticle{
         this.y = (_player.centerY - (Math.cos(_player.angle) * this.distance)) - (this.height / 2)
         this.angle = _player.angle;
         this.image = new Image();
-        this.image.src = 'assets/graphic/target.png'
+        this.image.src = 'assets/graphics/target.png'
     }
     update(){
         this.x = (_player.centerX + (Math.sin(_player.angle) * this.distance)) - (this.width / 2)

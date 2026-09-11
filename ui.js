@@ -2,12 +2,12 @@ import { input } from './input.js';
 import { state } from './state.js';
 export let abilityIcon; //for ability icon class and initialize function
 export let shootIcon;
-export let dashImage = 'assets/graphic/dash.png';
-export let flipTurnImage = 'assets/graphic/flipturn.png';
-export let rollImage = 'assets/graphic/roll.png';
-export let bulletImage = 'assets/graphic/bullet.png'
-export let laserImage = 'assets/graphic/laser.png'
-export let biteImage = 'assets/graphic/bite.png'
+export let dashImage = 'assets/graphics/dash.png';
+export let flipTurnImage = 'assets/graphics/flipturn.png';
+export let rollImage = 'assets/graphics/roll.png';
+export let bulletImage = 'assets/graphics/bullet.png'
+export let laserImage = 'assets/graphics/laser.png'
+export let biteImage = 'assets/graphics/bite.png'
 export let moveAbilityX = 75;
 export let moveAbilityY = 725;
 export let shootAbilityX = 25;
