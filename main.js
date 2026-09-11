@@ -49,14 +49,14 @@ let bulletCooldown = 400;
 
 //player laser variables
 let proboscusMouth = false;
-let laserSpeed = 5;
+let laserSpeed = 10;
 let laserWidth = 20;
 let laserDistance = 500;
 let laserDuration = 400;
 let laserDamage = 1;
 let laserSpawnTimer = null;
 let nextLaserTime = 0;
-let laserCooldown = 1000;
+let laserCooldown = 750;
 
 //player bite variables
 let mandibleMouth = false;
@@ -836,7 +836,7 @@ function resetGame(){
     timeToNextFrame = 0;
     lastTime = 0;
     playerStats.moveSpeed = 3;
-    killCount = 0;
+    playerStats.killcount = 0;
     playerStats.knockbackForce = 25;
     playerStats.invulnTimer = 1500;
     playerStats.nextInvuln = 0;
@@ -900,7 +900,7 @@ function goToNextLevel(){
     spawningState.spawnStarted = false;
     timeToNextFrame = 0;
     lastTime = 0;
-    killCount = 0;
+    playerStats.killcount = 0;
     playerStats.isInvuln = false;
     bullets = [];
     enemies = [];

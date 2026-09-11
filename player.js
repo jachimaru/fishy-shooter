@@ -31,7 +31,7 @@ export let dash = {
     modifier: 2,
     distance: 20,
     canDash: false, //turns true if player chooses jet propulsion
-    turnSpeed: 0.025,
+    turnSpeed: 0.03,
     moveSpeed: 4,
 };
 
@@ -47,7 +47,7 @@ export let fins = {
     chosen: false,
     canRoll: false,
     degree: 0.1,
-    turnSpeed: 0.1,
+    turnSpeed: 0.07,
     moveSpeed: 2,
     pivotDistance: 200,
     angle: 50,
