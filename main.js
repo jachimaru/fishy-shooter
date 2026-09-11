@@ -1,7 +1,8 @@
-import { setLevelBGM, levelBGM, startBGM, finishSFX, dashSFX, hitSFX, selectSFX, cooldownSFX, pauseSFX, gameoverBGM } from './audio.js';
+import { setLevelBGM, levelBGM, startBGM, finishSFX, hitSFX, selectSFX, pauseSFX, gameoverBGM } from './audio.js';
 import { initInput, input, moveRight, moveLeft, moveUp, moveDown, dashButton, pauseButton, gameReset, shootButton } from './input.js';
 import { state, spawningState } from './state.js';
-import { initUI, setAbilityIcon, setShootIcon, setCountdown, abilityIcon, shootIcon, dashImage, flipTurnImage, rollImage, bulletImage, laserImage, biteImage, moveAbilityX, moveAbilityY, shootAbilityX, shootAbilityY, mouthSelect, moveSelect, countdownNumber, SelectionScreen, AbilityIcon, drawPause, drawStartScreen, drawUI } from './ui.js';
+import { initUI, setAbilityIcon, setShootIcon, setCountdown, dashImage, flipTurnImage, rollImage, bulletImage, laserImage, biteImage, moveAbilityX, moveAbilityY, shootAbilityX, shootAbilityY, mouthSelect, moveSelect, countdownNumber, SelectionScreen, AbilityIcon, drawPause, drawStartScreen, drawUI } from './ui.js';
+import { initPlayer, targetReticle, Player, triggerDash, playerStats, dash, flipTurn, fins, setPlayer } from './player.js';
 const canvas = document.getElementById('canvas1');
 const ctx = canvas.getContext('2d');
 canvas.width = 800;
@@ -19,6 +20,9 @@ document.addEventListener('click', mouseClickHandler);
 
 initInput(canvas);
 initUI(canvas, ctx);
+initPlayer(canvas, ctx);
+let player = new Player();
+setPlayer(player);
 
 //level variables
 let currentLevelBGM = Math.floor(Math.random() * 5) + 1;
@@ -32,51 +36,51 @@ let waveOverlayTimer = 3000;
 let waveCompleteEndTime = 0;
 let waveOverlayStart = 0
 
-//player variables
-let startingX = canvas.width / 2;
-let startingY = canvas.height / 2;
-let moveSpeed = 3 * (state.currentLevel > 1 ? state.levelModifier : 1);
-let killCount = 0;
-let playerHealth = Math.floor(10 * (state.currentLevel > 1 ? healthModifier : 1));
-let healthModifier = 1.5;
-let knockbackForce = 25;
-let invulnTimer = 1500;
-let nextInvuln = 0;
-let isInvuln = false;
-let blinkRate = 20;
+// //player variables
+// let startingX = canvas.width / 2;
+// let startingY = canvas.height / 2;
+// let moveSpeed = 3 * (state.currentLevel > 1 ? state.levelModifier : 1);
+// let killCount = 0;
+// let playerHealth = Math.floor(10 * (state.currentLevel > 1 ? healthModifier : 1));
+// let healthModifier = 1.5;
+// let knockbackForce = 25;
+// let invulnTimer = 1500;
+// let nextInvuln = 0;
+// let isInvuln = false;
+// let blinkRate = 20;
 
-//dash variables (for jet Propulsion)
-let jetChosen = false;
-let dashCooldown = 3000;
-let dashModifier = 2;
-let dashDistance = 20;
-let canDash = false; //turns true if player chooses jet propulsion
-let jetTurnSpeed = 0.025
-let jetMoveSpeed = 4;
+// //dash variables (for jet Propulsion)
+// let jetChosen = false;
+// let dashCooldown = 3000;
+// let dashModifier = 2;
+// let dashDistance = 20;
+// let canDash = false; //turns true if player chooses jet propulsion
+// let jetTurnSpeed = 0.025
+// let jetMoveSpeed = 4;
 
-//flipTurn variables (for Flagella)
-let flagellaChosen = false;
-let canFlipTurn = false;
-let flipCooldown = 3000;
-let flipModifier = 1.5;
-let flipDistance = 10;
+// //flipTurn variables (for Flagella)
+// let flagellaChosen = false;
+// let canFlipTurn = false;
+// let flipCooldown = 3000;
+// let flipModifier = 1.5;
+// let flipDistance = 10;
 
-//dodgeRoll vairables (for Fins)
-let finsChosen = false;
-let finDegree = 0.1;
-let finTurnSpeed = 0.1;
-let finMoveSpeed = 2;
-let rollPivotDistance = 200;
-let rollAngle = 50;
-let rollDistance = rollAngle * Math.PI / 180;
-let canRoll = false;
-let rollCooldown = 3000;
+// //dodgeRoll vairables (for Fins)
+// let finsChosen = false;
+// let finDegree = 0.1;
+// let finTurnSpeed = 0.1;
+// let finMoveSpeed = 2;
+// let rollPivotDistance = 200;
+// let rollAngle = 50;
+// let rollDistance = rollAngle * Math.PI / 180;
+// let canRoll = false;
+// let rollCooldown = 3000;
 
-//turning variables
-let degree = 0.5;
-let rotation = (degree * Math.PI) / 180;
-let angle = 0;
-let turnSpeed = 0.05;
+// //turning variables
+// let degree = 0.5;
+// let rotation = (degree * Math.PI) / 180;
+// let angle = 0;
+// let turnSpeed = 0.05;
 
 //player bullet variables
 let filterMouth = true;
@@ -99,7 +103,7 @@ let laserDamage = 1;
 let laserSpawnTimer = null;
 let nextLaserTime = 0;
 let laserCooldown = 1000;
-let laserShot = false;
+// let laserShot = false;
 
 //player bite variables
 let mandibleMouth = false;
@@ -186,175 +190,175 @@ function mouseUpHandler(event) {
     }
 }
 
-class targetReticle{
-    constructor(){
-        this.width = 20;
-        this.height = 20;
-        if (filterMouth) {
-            this.distance = bulletDistance;
-        } else if (proboscusMouth) {
-            this.distance = laserDistance / 2;
-        } else if (mandibleMouth) {
-            this.distance = biteDistance;
-        }
-        this.x = (player.centerX + (Math.sin(player.angle) * this.distance)) - (this.width / 2)
-        this.y = (player.centerY - (Math.cos(player.angle) * this.distance)) - (this.height / 2)
-        this.angle = player.angle;
-        this.image = new Image();
-        this.image.src = 'assets/graphic/target.png'
-    }
-    update(){
-        this.x = (player.centerX + (Math.sin(player.angle) * this.distance)) - (this.width / 2)
-        this.y = (player.centerY - (Math.cos(player.angle) * this.distance)) - (this.height / 2)
-        this.angle = player.angle;
-    }
-    draw(ctx){
-        ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
-    }
-}
+// class targetReticle{
+//     constructor(){
+//         this.width = 20;
+//         this.height = 20;
+//         if (filterMouth) {
+//             this.distance = bulletDistance;
+//         } else if (proboscusMouth) {
+//             this.distance = laserDistance / 2;
+//         } else if (mandibleMouth) {
+//             this.distance = biteDistance;
+//         }
+//         this.x = (player.centerX + (Math.sin(player.angle) * this.distance)) - (this.width / 2)
+//         this.y = (player.centerY - (Math.cos(player.angle) * this.distance)) - (this.height / 2)
+//         this.angle = player.angle;
+//         this.image = new Image();
+//         this.image.src = 'assets/graphic/target.png'
+//     }
+//     update(){
+//         this.x = (player.centerX + (Math.sin(player.angle) * this.distance)) - (this.width / 2)
+//         this.y = (player.centerY - (Math.cos(player.angle) * this.distance)) - (this.height / 2)
+//         this.angle = player.angle;
+//     }
+//     draw(ctx){
+//         ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
+//     }
+// }
 
-class Player {
-    constructor(x, y){
-        this.height = 50;
-        this.width = 50;
-        this.x = startingX;
-        this.y = startingY;
-        this.angle = angle;
-        this.directionX = Math.cos(this.angle);
-        this.directionY = Math.sin(this.angle);
-        this.image = new Image();
-        this.image.src = 'assets/graphics/fish.png'
-        this.centerX = (this.x + this.width) - 25
-        this.centerY = (this.y + this.height) - 25
-        this.moveX = Math.cos(this.angle) * moveSpeed;
-        this.moveY = Math.sin(this.angle) * moveSpeed;
-        this.nextMoveTime = 0;
-    }
-    update(){
-        if (performance.now() >= nextInvuln) isInvuln = false;
+// class Player {
+//     constructor(x, y){
+//         this.height = 50;
+//         this.width = 50;
+//         this.x = startingX;
+//         this.y = startingY;
+//         this.angle = angle;
+//         this.directionX = Math.cos(this.angle);
+//         this.directionY = Math.sin(this.angle);
+//         this.image = new Image();
+//         this.image.src = 'assets/graphics/fish.png'
+//         this.centerX = (this.x + this.width) - 25
+//         this.centerY = (this.y + this.height) - 25
+//         this.moveX = Math.cos(this.angle) * moveSpeed;
+//         this.moveY = Math.sin(this.angle) * moveSpeed;
+//         this.nextMoveTime = 0;
+//     }
+//     update(){
+//         if (performance.now() >= nextInvuln) isInvuln = false;
 
-        if (playerHealth <= 0) {
-            state.gameState = 'gameOver';
-        }
-        //movement logic
-        if (input.rightPressed && !input.leftPressed && !laserShot) {
-            if (!finsChosen){
-                this.angle += turnSpeed;
-            } else if (finsChosen){
-                this.angle += finTurnSpeed;
-            }
-        } else if (input.leftPressed && !input.rightPressed && !laserShot) {
-            if (!finsChosen){
-                this.angle -= turnSpeed;
-            } else if (finsChosen){
-                this.angle -= finTurnSpeed;
-            }
-        }
+//         if (playerHealth <= 0) {
+//             state.gameState = 'gameOver';
+//         }
+//         //movement logic
+//         if (input.rightPressed && !input.leftPressed && !laserShot) {
+//             if (!finsChosen){
+//                 this.angle += turnSpeed;
+//             } else if (finsChosen){
+//                 this.angle += finTurnSpeed;
+//             }
+//         } else if (input.leftPressed && !input.rightPressed && !laserShot) {
+//             if (!finsChosen){
+//                 this.angle -= turnSpeed;
+//             } else if (finsChosen){
+//                 this.angle -= finTurnSpeed;
+//             }
+//         }
 
-        this.moveX = Math.sin(this.angle) * moveSpeed;
-        this.moveY = -Math.cos(this.angle) * moveSpeed;
+//         this.moveX = Math.sin(this.angle) * moveSpeed;
+//         this.moveY = -Math.cos(this.angle) * moveSpeed;
 
-        this.directionX = Math.cos(this.angle);
-        this.directionY = Math.sin(this.angle);
+//         this.directionX = Math.cos(this.angle);
+//         this.directionY = Math.sin(this.angle);
 
         
-        if (input.downPressed && jetChosen && !laserShot) {
-            if ((this.x - this.moveX) > 0 
-            && (this.x - this.moveX) < canvas.width - this.width 
-            && (this.y - this.moveY) > 0 
-            && (this.y - this.moveY) < canvas.height - this.height) {
-                this.y -= this.moveY / dashModifier;
-                this.x -= this.moveX / dashModifier;
-                this.centerX -= this.moveX / dashModifier;
-                this.centerY -= this.moveY / dashModifier;
-            }
-        } 
+//         if (input.downPressed && jetChosen && !laserShot) {
+//             if ((this.x - this.moveX) > 0 
+//             && (this.x - this.moveX) < canvas.width - this.width 
+//             && (this.y - this.moveY) > 0 
+//             && (this.y - this.moveY) < canvas.height - this.height) {
+//                 this.y -= this.moveY / dashModifier;
+//                 this.x -= this.moveX / dashModifier;
+//                 this.centerX -= this.moveX / dashModifier;
+//                 this.centerY -= this.moveY / dashModifier;
+//             }
+//         } 
         
-        if (input.downPressed && !laserShot) {
-            if ((this.x - this.moveX) > 0 
-            && (this.x - this.moveX) < canvas.width - this.width 
-            && (this.y - this.moveY) > 0 
-            && (this.y - this.moveY) < canvas.height - this.height) {  
-                this.y -= this.moveY;
-                this.x -= this.moveX;
-                this.centerX -= this.moveX;
-                this.centerY -= this.moveY;
-        }} else if (input.upPressed && !laserShot) {
-            if ((this.x + this.moveX) > 0 
-            && (this.x + this.moveX) < canvas.width - this.width 
-            && (this.y + this.moveY) > 0 
-            && (this.y + this.moveY) < canvas.height - this.height) {
-                this.y += this.moveY;
-                this.x += this.moveX;
-                this.centerX += this.moveX;
-                this.centerY += this.moveY;
-        }}
+//         if (input.downPressed && !laserShot) {
+//             if ((this.x - this.moveX) > 0 
+//             && (this.x - this.moveX) < canvas.width - this.width 
+//             && (this.y - this.moveY) > 0 
+//             && (this.y - this.moveY) < canvas.height - this.height) {  
+//                 this.y -= this.moveY;
+//                 this.x -= this.moveX;
+//                 this.centerX -= this.moveX;
+//                 this.centerY -= this.moveY;
+//         }} else if (input.upPressed && !laserShot) {
+//             if ((this.x + this.moveX) > 0 
+//             && (this.x + this.moveX) < canvas.width - this.width 
+//             && (this.y + this.moveY) > 0 
+//             && (this.y + this.moveY) < canvas.height - this.height) {
+//                 this.y += this.moveY;
+//                 this.x += this.moveX;
+//                 this.centerX += this.moveX;
+//                 this.centerY += this.moveY;
+//         }}
 
-        //movement skill timing logic
-        if (jetChosen && !laserShot) {
-            if (!canDash) {
-                if (performance.now() >= this.nextMoveTime){
-                    canDash = true;
-                    cooldownSFX.play();
-                }
-            }
-        }
+//         //movement skill timing logic
+//         if (jetChosen && !laserShot) {
+//             if (!canDash) {
+//                 if (performance.now() >= this.nextMoveTime){
+//                     canDash = true;
+//                     cooldownSFX.play();
+//                 }
+//             }
+//         }
 
-        if (finsChosen && !laserShot) {
-            if (!canRoll) {
-                if (performance.now() >= this.nextMoveTime){
-                    canRoll = true;
-                    cooldownSFX.play();
-                }
-            }
-        }
+//         if (finsChosen && !laserShot) {
+//             if (!canRoll) {
+//                 if (performance.now() >= this.nextMoveTime){
+//                     canRoll = true;
+//                     cooldownSFX.play();
+//                 }
+//             }
+//         }
 
-        if (flagellaChosen && !laserShot) {
-            if (!canFlipTurn) {
-                if (performance.now() >= this.nextMoveTime){
-                    canFlipTurn = true;
-                    cooldownSFX.play();
-                }
-            }
-        }
+//         if (flagellaChosen && !laserShot) {
+//             if (!canFlipTurn) {
+//                 if (performance.now() >= this.nextMoveTime){
+//                     canFlipTurn = true;
+//                     cooldownSFX.play();
+//                 }
+//             }
+//         }
 
 
-    }
-    draw(ctx){
-        ctx.save();
-        ctx.translate(this.centerX, this.centerY);
-        ctx.rotate(this.angle);
-        ctx.translate(-this.centerX, -this.centerY);
-        ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
-        ctx.restore();
-    }
-    takeDamage(x, y, damage) {
-        if (isInvuln) return;
-        playerHealth -= Math.floor(damage);
-        hitSFX.play();
-        let dx = x - this.centerX;
-        let dy = y - this.centerY;
-        let distance = Math.floor(Math.sqrt(dx * dx + dy * dy));
-        if (distance === 0) return;
-        let towardX = dx / distance;
-        let towardY = dy / distance;
+//     }
+//     draw(ctx){
+//         ctx.save();
+//         ctx.translate(this.centerX, this.centerY);
+//         ctx.rotate(this.angle);
+//         ctx.translate(-this.centerX, -this.centerY);
+//         ctx.drawImage(this.image, this.x, this.y, this.width, this.height);
+//         ctx.restore();
+//     }
+//     takeDamage(x, y, damage) {
+//         if (isInvuln) return;
+//         playerHealth -= Math.floor(damage);
+//         hitSFX.play();
+//         let dx = x - this.centerX;
+//         let dy = y - this.centerY;
+//         let distance = Math.floor(Math.sqrt(dx * dx + dy * dy));
+//         if (distance === 0) return;
+//         let towardX = dx / distance;
+//         let towardY = dy / distance;
 
-        if ((this.x - towardX * knockbackForce) > 0 
-            && (this.x - towardX * knockbackForce) < canvas.width - this.width 
-            && (this.y - towardY * knockbackForce) > 0 
-            && (this.y - towardY * knockbackForce) < canvas.height - this.height) {
-            this.x -= towardX * knockbackForce
-            this.y -= towardY * knockbackForce
-            this.centerX = (this.x + this.width) - 25;
-            this.centerY = (this.y + this.height) - 25;
-        }
+//         if ((this.x - towardX * knockbackForce) > 0 
+//             && (this.x - towardX * knockbackForce) < canvas.width - this.width 
+//             && (this.y - towardY * knockbackForce) > 0 
+//             && (this.y - towardY * knockbackForce) < canvas.height - this.height) {
+//             this.x -= towardX * knockbackForce
+//             this.y -= towardY * knockbackForce
+//             this.centerX = (this.x + this.width) - 25;
+//             this.centerY = (this.y + this.height) - 25;
+//         }
 
-        isInvuln = true;
-        nextInvuln = performance.now() + invulnTimer;
-    }x
-}
+//         isInvuln = true;
+//         nextInvuln = performance.now() + invulnTimer;
+//     }
+// }
 
-let player = new Player();
+
 let bullets = [];
 
 
@@ -905,159 +909,159 @@ function biteAttack() {
     }
 }
 
-function triggerDash() {
-    if (laserShot) return
-    if (canDash && jetChosen) {
-        if (input.upPressed) {
-            if ((player.x + player.moveX * dashDistance) > 0 
-                && (player.x + player.moveX * dashDistance) < canvas.width - player.width 
-                && (player.y + player.moveY * dashDistance) > 0 
-                && (player.y + player.moveY * dashDistance) < canvas.height - player.height) {
-                dashSFX.play();
-                player.y += (player.moveY * dashModifier) * dashDistance;
-                player.x += (player.moveX * dashModifier) * dashDistance;
-                player.centerX += (player.moveX * dashModifier) * dashDistance;
-                player.centerY += (player.moveY * dashModifier) * dashDistance;
-            }
-        } else if (input.downPressed) {
-            if ((player.x - player.moveX * dashDistance) > 0 
-                && (player.x - player.moveX * dashDistance) < canvas.width - player.width 
-                && (player.y - player.moveY * dashDistance) > 0 
-                && (player.y - player.moveY * dashDistance) < canvas.height - player.height) {
-                dashSFX.play();
-                player.y -= (player.moveY * dashModifier) * dashDistance;
-                player.x -= (player.moveX * dashModifier) * dashDistance;
-                player.centerX -= (player.moveX * dashModifier) * dashDistance;
-                player.centerY -= (player.moveY * dashModifier) * dashDistance;
-            }
-        } else {
-            if ((player.x + player.moveX * dashDistance) > 0 
-                && (player.x + player.moveX * dashDistance) < canvas.width - player.width 
-                && (player.y + player.moveY * dashDistance) > 0 
-                && (player.y + player.moveY * dashDistance) < canvas.height - player.height) {
-                dashSFX.play();
-                player.y += (player.moveY * dashModifier) * dashDistance;
-                player.x += (player.moveX * dashModifier) * dashDistance;
-                player.centerX += (player.moveX * dashModifier) * dashDistance;
-                player.centerY += (player.moveY * dashModifier) * dashDistance;
-            }
-        }
-        canDash = false;
-        player.nextMoveTime = performance.now() + dashCooldown;
-    }
-    if (canFlipTurn && flagellaChosen) {
-        if (input.upPressed || input.downPressed) {
-            if ((player.x - player.moveX * flipDistance) > 0 
-                && (player.x - player.moveX * flipDistance) < canvas.width - player.width 
-                && (player.y - player.moveY * flipDistance) > 0 
-                && (player.y - player.moveY * flipDistance) < canvas.height - player.height) {
-                dashSFX.play();
-                player.y -= (player.moveY * flipModifier) * flipDistance;
-                player.x -= (player.moveX * flipModifier) * flipDistance;
-                player.centerX -= (player.moveX * flipModifier) * flipDistance;
-                player.centerY -= (player.moveY * flipModifier) * flipDistance;
-                player.angle += Math.PI;
-                player.moveX = Math.sin(player.angle) * moveSpeed;
-                player.moveY = Math.cos(player.angle) * moveSpeed;
-            }
-        } else {
-            if ((player.x - player.moveX * flipDistance) > 0 
-                && (player.x - player.moveX * flipDistance) < canvas.width - player.width 
-                && (player.y - player.moveY * flipDistance) > 0 
-                && (player.y - player.moveY * flipDistance) < canvas.height - player.height) {
-                dashSFX.play();
-                player.y -= (player.moveY * flipModifier) * flipDistance;
-                player.x -= (player.moveX * flipModifier) * flipDistance;
-                player.centerX -= (player.moveX * flipModifier) * flipDistance;
-                player.centerY -= (player.moveY * flipModifier) * flipDistance;
-                player.angle += Math.PI;
-                player.moveX = Math.sin(player.angle) * moveSpeed;
-                player.moveY = Math.cos(player.angle) * moveSpeed;
-            }
-        }
-        canFlipTurn = false;
-        player.nextMoveTime = performance.now() + dashCooldown;
-    }
-    if (canRoll && finsChosen) {
-        if (input.upPressed) {
-            let pivotX = player.centerX + (Math.sin(player.angle) * rollPivotDistance);
-            let pivotY = player.centerY - (Math.cos(player.angle) * rollPivotDistance);
-            let dx = player.centerX - pivotX;
-            let dy = player.centerY - pivotY;
-            let distance = Math.floor(Math.sqrt(dx * dx + dy * dy));
-            if (distance === 0) return;
-            let towardX = dx / distance;
-            let towardY = dy / distance;
-            let newX = towardX * Math.cos(-rollDistance) - towardY * Math.sin(-rollDistance);
-            let newY = towardX * Math.sin(-rollDistance) + towardY * Math.cos(-rollDistance);
-            let playerX = pivotX + (newX * distance);
-            let playerY = pivotY + (newY * distance);
-            if (playerX > player.width / 2
-                && playerX < canvas.width - player.width / 2
-                && playerY > player.height / 2
-                && playerY < canvas.height - player.height / 2) {
-                dashSFX.play();
-                player.angle -= rollDistance;
-                player.centerX = playerX
-                player.centerY = playerY
-                player.x = playerX - player.width / 2;
-                player.y = playerY - player.height / 2;
+// function triggerDash() {
+//     if (laserShot) return
+//     if (canDash && jetChosen) {
+//         if (input.upPressed) {
+//             if ((player.x + player.moveX * dashDistance) > 0 
+//                 && (player.x + player.moveX * dashDistance) < canvas.width - player.width 
+//                 && (player.y + player.moveY * dashDistance) > 0 
+//                 && (player.y + player.moveY * dashDistance) < canvas.height - player.height) {
+//                 dashSFX.play();
+//                 player.y += (player.moveY * dashModifier) * dashDistance;
+//                 player.x += (player.moveX * dashModifier) * dashDistance;
+//                 player.centerX += (player.moveX * dashModifier) * dashDistance;
+//                 player.centerY += (player.moveY * dashModifier) * dashDistance;
+//             }
+//         } else if (input.downPressed) {
+//             if ((player.x - player.moveX * dashDistance) > 0 
+//                 && (player.x - player.moveX * dashDistance) < canvas.width - player.width 
+//                 && (player.y - player.moveY * dashDistance) > 0 
+//                 && (player.y - player.moveY * dashDistance) < canvas.height - player.height) {
+//                 dashSFX.play();
+//                 player.y -= (player.moveY * dashModifier) * dashDistance;
+//                 player.x -= (player.moveX * dashModifier) * dashDistance;
+//                 player.centerX -= (player.moveX * dashModifier) * dashDistance;
+//                 player.centerY -= (player.moveY * dashModifier) * dashDistance;
+//             }
+//         } else {
+//             if ((player.x + player.moveX * dashDistance) > 0 
+//                 && (player.x + player.moveX * dashDistance) < canvas.width - player.width 
+//                 && (player.y + player.moveY * dashDistance) > 0 
+//                 && (player.y + player.moveY * dashDistance) < canvas.height - player.height) {
+//                 dashSFX.play();
+//                 player.y += (player.moveY * dashModifier) * dashDistance;
+//                 player.x += (player.moveX * dashModifier) * dashDistance;
+//                 player.centerX += (player.moveX * dashModifier) * dashDistance;
+//                 player.centerY += (player.moveY * dashModifier) * dashDistance;
+//             }
+//         }
+//         canDash = false;
+//         player.nextMoveTime = performance.now() + dashCooldown;
+//     }
+//     if (canFlipTurn && flagellaChosen) {
+//         if (input.upPressed || input.downPressed) {
+//             if ((player.x - player.moveX * flipDistance) > 0 
+//                 && (player.x - player.moveX * flipDistance) < canvas.width - player.width 
+//                 && (player.y - player.moveY * flipDistance) > 0 
+//                 && (player.y - player.moveY * flipDistance) < canvas.height - player.height) {
+//                 dashSFX.play();
+//                 player.y -= (player.moveY * flipModifier) * flipDistance;
+//                 player.x -= (player.moveX * flipModifier) * flipDistance;
+//                 player.centerX -= (player.moveX * flipModifier) * flipDistance;
+//                 player.centerY -= (player.moveY * flipModifier) * flipDistance;
+//                 player.angle += Math.PI;
+//                 player.moveX = Math.sin(player.angle) * moveSpeed;
+//                 player.moveY = Math.cos(player.angle) * moveSpeed;
+//             }
+//         } else {
+//             if ((player.x - player.moveX * flipDistance) > 0 
+//                 && (player.x - player.moveX * flipDistance) < canvas.width - player.width 
+//                 && (player.y - player.moveY * flipDistance) > 0 
+//                 && (player.y - player.moveY * flipDistance) < canvas.height - player.height) {
+//                 dashSFX.play();
+//                 player.y -= (player.moveY * flipModifier) * flipDistance;
+//                 player.x -= (player.moveX * flipModifier) * flipDistance;
+//                 player.centerX -= (player.moveX * flipModifier) * flipDistance;
+//                 player.centerY -= (player.moveY * flipModifier) * flipDistance;
+//                 player.angle += Math.PI;
+//                 player.moveX = Math.sin(player.angle) * moveSpeed;
+//                 player.moveY = Math.cos(player.angle) * moveSpeed;
+//             }
+//         }
+//         canFlipTurn = false;
+//         player.nextMoveTime = performance.now() + dashCooldown;
+//     }
+//     if (canRoll && finsChosen) {
+//         if (input.upPressed) {
+//             let pivotX = player.centerX + (Math.sin(player.angle) * rollPivotDistance);
+//             let pivotY = player.centerY - (Math.cos(player.angle) * rollPivotDistance);
+//             let dx = player.centerX - pivotX;
+//             let dy = player.centerY - pivotY;
+//             let distance = Math.floor(Math.sqrt(dx * dx + dy * dy));
+//             if (distance === 0) return;
+//             let towardX = dx / distance;
+//             let towardY = dy / distance;
+//             let newX = towardX * Math.cos(-rollDistance) - towardY * Math.sin(-rollDistance);
+//             let newY = towardX * Math.sin(-rollDistance) + towardY * Math.cos(-rollDistance);
+//             let playerX = pivotX + (newX * distance);
+//             let playerY = pivotY + (newY * distance);
+//             if (playerX > player.width / 2
+//                 && playerX < canvas.width - player.width / 2
+//                 && playerY > player.height / 2
+//                 && playerY < canvas.height - player.height / 2) {
+//                 dashSFX.play();
+//                 player.angle -= rollDistance;
+//                 player.centerX = playerX
+//                 player.centerY = playerY
+//                 player.x = playerX - player.width / 2;
+//                 player.y = playerY - player.height / 2;
                 
-            }
-        } else if (input.downPressed) {
-            let pivotX = player.centerX + (Math.sin(player.angle) * rollPivotDistance);
-            let pivotY = player.centerY - (Math.cos(player.angle) * rollPivotDistance);
-            let dx = player.centerX - pivotX;
-            let dy = player.centerY - pivotY;
-            let distance = Math.floor(Math.sqrt(dx * dx + dy * dy));
-            if (distance === 0) return;
-            let towardX = dx / distance;
-            let towardY = dy / distance;
-            let newX = towardX * Math.cos(rollDistance) - towardY * Math.sin(rollDistance);
-            let newY = towardX * Math.sin(rollDistance) + towardY * Math.cos(rollDistance);
-            let playerX = pivotX + (newX * distance);
-            let playerY = pivotY + (newY * distance);
-            if (playerX > player.width / 2
-                && playerX < canvas.width - player.width / 2
-                && playerY > player.height / 2
-                && playerY < canvas.height - player.height / 2) {
-                dashSFX.play();
-                player.angle += rollDistance;
-                player.centerX = playerX
-                player.centerY = playerY
-                player.x = playerX - player.width / 2;
-                player.y = playerY - player.height / 2;
-            }
-        } else {
-            let pivotX = player.centerX + (Math.sin(player.angle) * rollPivotDistance);
-            let pivotY = player.centerY - (Math.cos(player.angle) * rollPivotDistance);
-            let dx = player.centerX - pivotX;
-            let dy = player.centerY - pivotY;
-            let distance = Math.floor(Math.sqrt(dx * dx + dy * dy));
-            if (distance === 0) return;
-            let towardX = dx / distance;
-            let towardY = dy / distance;
-            let newX = towardX * Math.cos(-rollDistance) - towardY * Math.sin(-rollDistance);
-            let newY = towardX * Math.sin(-rollDistance) + towardY * Math.cos(-rollDistance);
-            let playerX = pivotX + (newX * distance);
-            let playerY = pivotY + (newY * distance);
-            if (playerX > player.width / 2
-                && playerX < canvas.width - player.width / 2
-                && playerY > player.height / 2
-                && playerY < canvas.height - player.height / 2) {
-                dashSFX.play();
+//             }
+//         } else if (input.downPressed) {
+//             let pivotX = player.centerX + (Math.sin(player.angle) * rollPivotDistance);
+//             let pivotY = player.centerY - (Math.cos(player.angle) * rollPivotDistance);
+//             let dx = player.centerX - pivotX;
+//             let dy = player.centerY - pivotY;
+//             let distance = Math.floor(Math.sqrt(dx * dx + dy * dy));
+//             if (distance === 0) return;
+//             let towardX = dx / distance;
+//             let towardY = dy / distance;
+//             let newX = towardX * Math.cos(rollDistance) - towardY * Math.sin(rollDistance);
+//             let newY = towardX * Math.sin(rollDistance) + towardY * Math.cos(rollDistance);
+//             let playerX = pivotX + (newX * distance);
+//             let playerY = pivotY + (newY * distance);
+//             if (playerX > player.width / 2
+//                 && playerX < canvas.width - player.width / 2
+//                 && playerY > player.height / 2
+//                 && playerY < canvas.height - player.height / 2) {
+//                 dashSFX.play();
+//                 player.angle += rollDistance;
+//                 player.centerX = playerX
+//                 player.centerY = playerY
+//                 player.x = playerX - player.width / 2;
+//                 player.y = playerY - player.height / 2;
+//             }
+//         } else {
+//             let pivotX = player.centerX + (Math.sin(player.angle) * rollPivotDistance);
+//             let pivotY = player.centerY - (Math.cos(player.angle) * rollPivotDistance);
+//             let dx = player.centerX - pivotX;
+//             let dy = player.centerY - pivotY;
+//             let distance = Math.floor(Math.sqrt(dx * dx + dy * dy));
+//             if (distance === 0) return;
+//             let towardX = dx / distance;
+//             let towardY = dy / distance;
+//             let newX = towardX * Math.cos(-rollDistance) - towardY * Math.sin(-rollDistance);
+//             let newY = towardX * Math.sin(-rollDistance) + towardY * Math.cos(-rollDistance);
+//             let playerX = pivotX + (newX * distance);
+//             let playerY = pivotY + (newY * distance);
+//             if (playerX > player.width / 2
+//                 && playerX < canvas.width - player.width / 2
+//                 && playerY > player.height / 2
+//                 && playerY < canvas.height - player.height / 2) {
+//                 dashSFX.play();
                 
-                player.angle -= rollDistance;
-                player.centerX = playerX
-                player.centerY = playerY
-                player.x = playerX - player.width / 2;
-                player.y = playerY - player.height / 2;
-            }
-        }
-        canRoll = false;
-        player.nextMoveTime = performance.now() + dashCooldown;
-    }
-}
+//                 player.angle -= rollDistance;
+//                 player.centerX = playerX
+//                 player.centerY = playerY
+//                 player.x = playerX - player.width / 2;
+//                 player.y = playerY - player.height / 2;
+//             }
+//         }
+//         canRoll = false;
+//         player.nextMoveTime = performance.now() + dashCooldown;
+//     }
+// }
 
 function mouseAuxHandler(event) {
     event.preventDefault();
@@ -1283,6 +1287,15 @@ function goToNextLevel(){
 }
 
 let previousNumber = 0;
+let distance;
+if (filterMouth) {
+      distance = bulletDistance;
+  } else if (proboscusMouth) {
+      distance = laserDistance / 2;
+  } else if (mandibleMouth) {
+      distance = biteDistance;
+  }
+let target = new targetReticle(distance)
 
 function updateAndDraw(){
     if (state.gameState === 'playing') {
@@ -1293,14 +1306,13 @@ function updateAndDraw(){
         checkEnemyBullets();
         checkCollision();
         if (isInvuln && Math.sin(performance.now() / blinkRate) > 0) {
-            player.draw(ctx);
+            player.draw();
         } else if (!isInvuln) {
-            player.draw(ctx);
+            player.draw();
         }
         player.update();
-        let target = new targetReticle()
         target.update()
-        target.draw(ctx)
+        target.draw()
         bullets = bullets.filter(object => !object.markedForDeletion);
         enemyBullets = enemyBullets.filter(object => !object.markedForDeletion);
         enemies = enemies.filter(object => object.isAlive);
