@@ -442,6 +442,7 @@ class Enemy {
         }
         if (this.state === 'shooting') {
             this.turnTowardPlayer();
+            this.isShooting = true;
             this.updateShooting();
         }
         if (this.state === 'patrolling' && this.type !== 'puffer') this.updatePatrolling();
@@ -493,6 +494,7 @@ class Enemy {
         }
     }
     turnTowardPlayer(){
+        if (this.isShooting) return
         this.targetX = player.centerX;
         this.targetY = player.centerY;
         this.dx = this.targetX - this.centerX;
@@ -571,6 +573,7 @@ class Enemy {
         //transition to patrolling
         if (!this.inShootRange && this.wavesFired === 0){
             if (this.type === 'puffer') return;
+            this.isShooting = false;
             this.state = 'patrolling';
             return;
         }
