@@ -41,7 +41,7 @@ let filterMouth = true;
 let bulletSpeed = 1.75;
 let bulletRadius = 20;
 let bulletDistance = 200;
-let bulletDamage = 1;
+let bulletDamage = 2;
 let bulletForgiveness = 10; //increases hitbox of bullets.
 let bulletSpawnTimer = null;
 let nextShootTime = 0;
@@ -203,8 +203,8 @@ class Laser {
     constructor() {
         this.type = 'laser'
         this.width = laserWidth;
-        this.height = 20;
-        this.radius = 20;
+        this.height = laserWidth;
+        this.radius = laserWidth;
         this.length = 0;
         this.damage = laserDamage;
         this.duration = laserDuration;
@@ -255,7 +255,7 @@ class Laser {
         ctx.save();
         ctx.moveTo(player.centerX, player.centerY);
         ctx.lineTo(this.centerX, this.centerY);
-        ctx.lineWidth = 6;
+        ctx.lineWidth = (laserWidth / 2) - 4;
         ctx.strokeStyle = '#85F0EB'
         ctx.stroke();
         ctx.translate(this.centerX, this.centerY);
