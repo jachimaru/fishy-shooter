@@ -495,6 +495,7 @@ class Enemy {
     }
     turnTowardPlayer(){
         if (this.isShooting) return
+        isShooting = false;
         this.targetX = player.centerX;
         this.targetY = player.centerY;
         this.dx = this.targetX - this.centerX;
